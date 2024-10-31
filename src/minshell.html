@@ -34,20 +34,86 @@
     <link rel="shortcut icon" href="https://www.raylib.com/favicon.ico">
 
     <!-- Web Style -->
+    <!-- palette
+    #define CBLUE     CLITERAL (Color){0x00, 0x3f, 0x5c, 0xff}
+    #define CPURPLE   CLITERAL (Color){0x58, 0x50, 0x8d, 0xff}
+    #define CVIOLET   CLITERAL (Color){0x8a, 0x50, 0x8f, 0xff}
+    #define CBURGUNDY CLITERAL (Color){0xbc, 0x50, 0x90, 0xff}
+    #define CDARKRED  CLITERAL (Color){0xde, 0x5a, 0x79, 0xff}
+    #define CRED      CLITERAL (Color){0xff, 0x63, 0x31, 0xff}
+    #define CORANGE   CLITERAL (Color){0xff, 0x85, 0x31, 0xff}
+    #define CYELLOW   CLITERAL (Color){0xff, 0xa6, 0x00, 0xff} -->
     <style>
+        .bg-blue {
+            background-color:#003f5c;
+        }
+        .bg-purple {
+            background-color:#58508d;
+        }
+        .bg-violet {
+            background-color:#8a508f;
+        }
+        .bg-burgundy {
+            background-color:#bc5090;
+        }
+        .bg-darkred {
+            background-color:#de5a79;
+        }
+        .bg-red {
+            background-color:#ff6331;
+        }
+        .bg-orange {
+            background-color:#ff8531;
+        }
+        .bg-orange {
+            background-color:#ffa600;
+        }
+
+        .fg-blue {
+            color:#003f5c;
+        }
+        .fg-purple {
+            color:#58508d;
+        }
+        .fg-violet {
+            color:#8a508f;
+        }
+        .fg-burgundy {
+            color:#bc5090;
+        }
+        .fg-darkred {
+            color:#de5a79;
+        }
+        .fg-red {
+            color:#ff6331;
+        }
+        .fg-orange {
+            color:#ff8531;
+        }
+        .fg-yellow {
+            color:#ffa600;
+        }
         body { 
           margin: 0px; 
-          overflow: hidden; 
-          background-color: black;
+          overflow: hidden;
         }
         canvas.emscripten { 
-          border: 0px none; 
-          background-color: black;}
+          border: 1px solid #bc5090;
           padding-left: 0;
           padding-right: 0;
           margin-left: auto;
           margin-right: auto;
           display: block;
+        }
+        .header-container {
+            display: block;
+            max-width:600px;
+            border: 4px solid #ffa600;
+            margin: auto;
+            margin-bottom: 20px;
+        }
+        header{
+            text-align: center;
         }
     </style>
     <script type='text/javascript' src="https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js/dist/FileSaver.min.js"> </script>
@@ -70,8 +136,14 @@
         }
     </script>
     </head>
-    <body>
-        <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
+    <body class="bg-blue fg-yellow">
+        <div class="header-container">
+            <header>
+                <h1>Train Connections</h1>
+                <small>Based on a true story</small>
+            </header>
+        </div>
+        <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
         <p id="output" />
         <script>
             var Module = {

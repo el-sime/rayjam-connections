@@ -70,3 +70,10 @@ compile_commands.json
 # Android
 *apk*
 android.*
+
+src/*.o
+src/*.exe
+src/raylib_game
+src/connections
+
+.vscode/
