@@ -8,6 +8,8 @@
 #define L1ROWS 32
 #define L1LAYERS 1
 
+#define L1FLOOR_TILE 1
+
 static const int Level1[L1LAYERS][L1ROWS][L1COLS] = {
     {
     //                       1                   2                   3
@@ -51,8 +53,14 @@ static const int Level1[L1LAYERS][L1ROWS][L1COLS] = {
 
 static Vector3 Level1Start = {5, 31, 0};
 static Vector3 Level1End = {31, 22, 0};
+static Vector2 GetTileScreenPosition(int x, int y, int z);
 
 
 void DrawLevel1Map(Vector3 playerWorldPosition, float playerRotationAngle);
-Vector3 GetLevel1SpawnPoint();
+
+Vector3 GetLevel1SpawnPoint(int layer);
+
+bool GetLevel1WallCollision(Vector3 playerWorldPosition, Vector3 playerNewPosition, float playerSize);
+
+Vector3 GetPlayerLevel1ScreenPosition(Vector3 playerWorldPosition, float playerRotationAngle);
 #endif
