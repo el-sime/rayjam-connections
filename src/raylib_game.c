@@ -23,11 +23,13 @@
 #include <stdlib.h>                         // Required for: 
 #include <string.h>                         // Required for: 
 
+#include "raycasting.h"
+
 // Levels
 #include "level1.h"
 
 
-
+extern rays;
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------

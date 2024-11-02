@@ -63,4 +63,13 @@ Vector3 GetLevel1SpawnPoint(int layer);
 bool GetLevel1WallCollision(Vector3 playerWorldPosition, Vector3 playerNewPosition, float playerSize);
 
 Vector3 GetPlayerLevel1ScreenPosition(Vector3 playerWorldPosition, float playerRotationAngle);
+
+int GetLevel1TileContent(int x, int y, int z)
+{
+    if (x < 0 || x >=  L1COLS) return -1;
+    if (y < 0 || y >=  L1ROWS) return -1;
+    if(z != 0) return -1;
+    return Level1[z][y][x];
+}
+
 #endif

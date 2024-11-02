@@ -14,7 +14,7 @@ void DrawLevel1Map(Vector3 playerWorldPosition, float playerRotationAngle)
         {
             Vector2 tileScreenPosition = GetTileScreenPosition(x, y, 0);
             DrawRectangle(tileScreenPosition.x, tileScreenPosition.y, tileSize, tileSize, palette[Level1[0][y][x]]);
-            DrawRectangleLines(tileScreenPosition.x,  tileScreenPosition.y, tileSize, tileSize, BLACK);
+            DrawRectangleLines(tileScreenPosition.x,  tileScreenPosition.y, tileSize, tileSize, palette[0]);
             
         }
     }
