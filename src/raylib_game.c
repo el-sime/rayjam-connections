@@ -540,7 +540,7 @@ static void UpdateDrawLogoScreen(void)
     logoScreenTime += GetFrameTime();
     if(logoScreenTime >= logoScreenMaxTime)
     {
-        //currentGamescreen = SCREEN_TITLE;
+        currentGamescreen = SCREEN_TITLE;
     }
     if(IsKeyPressed(KEY_SPACE))
     {
