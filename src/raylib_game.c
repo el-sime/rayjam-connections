@@ -16,6 +16,8 @@
 #include "constants.h"
 #include "cubemap.h"
 
+#define MAX_LEVEL 2
+
 Color palette[MAX_PALETTE_COLORS] = {
     CBLUE    ,
     CPURPLE  ,
@@ -77,6 +79,16 @@ typedef enum {
     OBSTACLE,
     CONNECTION
 } CollisionType;
+
+
+typedef struct Level {
+    int id;
+    float time;
+    Vector3 startingPosition;
+} Level;
+
+Level LoadLevel(int levelId);
+void UnloadLevel(void);
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
@@ -95,7 +107,7 @@ Model model;
 Texture2D mapTexture;
 
 // Player
-static Vector3 playerWorldPosition = {34.0f, 89.0f, 0.0f};
+static Vector3 playerWorldPosition = {0.0f, 0.0f, 0.0f};
 static float playerMinSpeed = 1.0f; // pixels /s 
 static float playerMaxSpeed = 5.0f; // pixels /s 
 static float playerSpeed; // pixels / sec
@@ -115,15 +127,32 @@ static float playerAnimationFrameDuration = 0.3;// = 100 / 5;
 static int playerAnimationFrameWidth;
 static Texture2D playerAnimationTexture;
 
-static Color *mapPixels;
+Texture2D atlasTexture;
+static Color *mapPixels; // for collisions
 
 static Sound smallOuch;
 static Sound bigOuch  ;
 static Sound OuhMother;
+static Sound scratch;
 
 static Music tunnelVision;
 
 static GameOverReason isGameOver = NOT_OVER;
+static bool didScratchPlay = false;
+
+
+static bool isGamePaused = true;
+
+static int currentLevel = 0;
+static Texture2D levelMapTexture;
+static float levelTime = 0.0f;
+
+
+GameScreen currentGamescreen = SCREEN_LOGO;
+
+
+static float logoScreenTime = 0.0;
+static float logoScreenMaxTime = 3.0;
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
@@ -131,6 +160,10 @@ static void UpdateDrawFrame(void);      // Update and Draw one frame
 static void MovePlayer(void);
 static void UpdateCustomCamera(void);
 static void UpdateDrawGameOver(void);
+
+static void UpdateDrawLogoScreen(void);
+static void UpdateDrawTitleScreen(void);
+static void UpdateDrawPauseScreen(void);
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -142,44 +175,37 @@ int main(void)
 
     // Initialization
     //--------------------------------------------------------------------------------------
-    InitWindow(screenWidth, screenHeight, "Train Connections");
+    InitWindow(screenWidth, screenHeight, "Catch the connection");
     
     // TODO: Load resources / Initialize variables at this point
     // Define the camera to look into our 3d world
     
-    camera.position = (Vector3){ 34.0f, 0.4f, 89.0f };     // Camera position
-    camera.target = (Vector3){ 2.0f, 0.4f, 15.0f };        // Camera looking at point
-    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };              // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;                                    // Camera field-of-view Y
-    camera.projection = CAMERA_PERSPECTIVE;                 // Camera projection type
+    camera.position = (Vector3){ 0.0f, 0.4f, 0.0f };
+    camera.target = (Vector3){ 2.0f, 0.4f, 15.0f };
+    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
+    camera.fovy = 45.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
 
-    Image image = LoadImage("resources/level2map.png");      // Load cubicmap image (RAM)
-    mapTexture = LoadTextureFromImage(image);
-
-    Mesh mesh = GenMeshCubicmapMulticolor(image, (Vector3){ 1.0f, 1.0f, 1.0f }, CPURPLE, CBLUE);
-    model = LoadModelFromMesh(mesh);
-
-    Texture2D texture = LoadTexture("resources/connections-atlas.png");    // Load map texture
-    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;    // Set map diffuse texture
-
-    // Get map image data to be used for collision detection
-    mapPixels = LoadImageColors(image);
-    UnloadImage(image);     // Unload cubesmap image from RAM, already uploaded to VRAM
+    
     
     InitAudioDevice();
     // TODO: refactor by screen
     smallOuch = LoadSound("resources/sounds/smallouch.ogg");
     bigOuch   = LoadSound("resources/sounds/OUCH.ogg");
     OuhMother = LoadSound("resources/sounds/OUH_MOTHER.ogg");
+    scratch = LoadSound("resources/sounds/scratch.mp3");
     tunnelVision = LoadMusicStream("resources/sounds/tunnel_vision.xm");
     //tunnelVision
     tunnelVision.looping = true;
-    SetMusicVolume(tunnelVision, 0.5);
-    PlayMusicStream(tunnelVision);
+    SetMusicVolume(tunnelVision, 0.3);
+    
 
     playerAnimationTexture = LoadTexture("resources/player_spritesheet.png");
     playerAnimationFrameWidth = playerAnimationTexture.width / playerAnimationMaxFrames;
     DisableCursor();  
+
+    
+
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
@@ -196,12 +222,17 @@ int main(void)
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
+
+    
+
     UnloadTexture(mapTexture);    // Unload cubicmap texture
-    UnloadTexture(texture);     // Unload map texture
+    UnloadTexture(atlasTexture);
+    UnloadTexture(levelMapTexture);
     UnloadModel(model);         // Unload map model
     UnloadSound(smallOuch);
     UnloadSound(bigOuch);
     UnloadSound(OuhMother);
+    UnloadSound(scratch);
     UnloadMusicStream(tunnelVision);
     // TODO: Unload all loaded resources at this point
 
@@ -217,16 +248,37 @@ int main(void)
 // Update and draw frame
 void UpdateDrawFrame(void)
 {
-    if(playerSpeed == 0) playerAnimationFrameDuration = 100000;
+    if(currentGamescreen == SCREEN_LOGO)
+    {
+        UpdateDrawLogoScreen();
+        return;
+    }
+    if(currentGamescreen == SCREEN_TITLE)
+    {
+        UpdateDrawTitleScreen();
+        return;
+    }
+
+    // if(isGamePaused)
+    // {
+    //     UpdateDrawPauseScreen();
+    // }
+
+    if(playerSpeed == 0) playerAnimationFrameDuration = 100000;//horrible hack
     if(playerSpeed >= 1 && playerSpeed < 2.5) playerAnimationFrameDuration = 0.3;
     if(playerSpeed >= 2.5 && playerSpeed < 3.5) playerAnimationFrameDuration = 0.2;
     if(playerSpeed >= 3.5 && playerSpeed <= 5) playerAnimationFrameDuration = 0.1;
 
-    UpdateMusicStream(tunnelVision);
     if(isGameOver > -1){
         UpdateDrawGameOver();
         return;
     }
+    if (currentLevel == 0)
+    {
+        LoadLevel(++currentLevel);
+        return;
+    }
+    UpdateMusicStream(tunnelVision);
     // Update
     //----------------------------------------------------------------------------------
     if(playerGraceTime > 0)
@@ -238,10 +290,12 @@ void UpdateDrawFrame(void)
     {
         playerTurnDirection = -1;
     }
+
     if(IsKeyPressed(KEY_D))
     {
         playerTurnDirection = 1;
     }
+
     if(IsKeyPressed(KEY_SPACE))
     {
         if (playerSpeed > 0) 
@@ -269,6 +323,12 @@ void UpdateDrawFrame(void)
     {
         playerSpeed = Clamp(playerSpeed - playerAcceleration * GetFrameTime(), playerMinSpeed, playerMaxSpeed);
     }
+    levelTime -= GetFrameTime();
+
+    if(levelTime <= 0.0f)
+    {
+        isGameOver = TIMESUP;
+    }
 
     MovePlayer();
     UpdateCustomCamera();
@@ -280,29 +340,9 @@ void UpdateDrawFrame(void)
             DrawModel(model, mapPosition, 1.0f, WHITE);
 
         EndMode3D();
-        //Draw minimap
-        //DrawTextureEx(mapTexture, (Vector2){ GetScreenWidth() - mapTexture.width - 20, 20.0f }, 0.0f, 1.0f, WHITE);
-        //DrawTexturePro()
-        //DrawTextureEx(mapTexture, (Vector2){ GetScreenWidth() - mapTexture.width*4.0f - 20, 20.0f }, 0.0f, 4.0f, WHITE);
-        //DrawRectangle(GetScreenWidth() - mapTexture.width*4 - 20 + playerCellX*4, 20 + playerCellY*4, 4, 4, RED);
         
-        
-        // DrawRectangle(GetScreenWidth() - (minimapSize + 4), GetScreenHeight() - (minimapSize + 4), minimapSize + 4, minimapSize + 4, CYELLOW);
-        // DrawRectangle(GetScreenWidth() - (minimapSize + 2), GetScreenHeight() - (minimapSize + 2), minimapSize, minimapSize, CBLUE);
-        
-        DrawTexture (mapTexture, GetScreenWidth() - mapTexture.width, GetScreenHeight() - mapTexture.height, WHITE);
-        DrawRectangleLines((GetScreenWidth() - (minimapSize / 2) - 2) - minimapSize / 4, (GetScreenHeight() - (minimapSize / 2) - 2) - minimapSize / 4, minimapSize / 2, minimapSize / 2, CYELLOW);
-        // DrawTexturePro(
-        //     mapTexture,
-        //     (Rectangle){playerWorldPosition.x - minimapSize / 4, playerWorldPosition.y - minimapSize / 4, minimapSize / 2, minimapSize / 2},
-        //     (Rectangle){GetScreenWidth() - (minimapSize + 2), GetScreenHeight() - (minimapSize + 2), minimapSize, minimapSize},
-        //     (Vector2){0,0},
-        //     (2* PI ) - playerRotationAngle,
-        //     WHITE
-        // );
-        DrawCircle(GetScreenWidth() - (minimapSize / 2) - 2, GetScreenHeight() - (minimapSize / 2) - 2, 2, CRED);
 
-        DrawFPS(10, 10);
+        
         
         //Draw the player
         playerAnimationTime += GetFrameTime();
@@ -330,6 +370,7 @@ void UpdateDrawFrame(void)
             WHITE
         );
 
+        DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
         DrawText(TextFormat("Speed: %.2f", playerSpeed),10, 40, 20, CYELLOW );
         DrawRectangle(GetScreenWidth()/2 - 52, 4, 104, 44, CPURPLE);
         DrawRectangle(GetScreenWidth()/2 - 50, 6, playerLife, 40, CORANGE);
@@ -363,7 +404,7 @@ static void MovePlayer(void)
                 //what kind of collision
                 if(COLOR_EQUAL(pixelColor, CDARKRED)) collision = CONNECTION;
                 if(COLOR_EQUAL(pixelColor, CORANGE))  collision = BADTRAIN;
-                if(COLOR_EQUAL(pixelColor, CRED))  collision = EXIT;
+                if(COLOR_EQUAL(pixelColor, BLACK))  collision = EXIT;
             }
         }
     }
@@ -429,6 +470,21 @@ static void UpdateCustomCamera(void)
 
 static void UpdateDrawGameOver(void)
 {
+    if(IsKeyPressed(KEY_SPACE))
+    {
+        if(isGameOver == WON && currentLevel + 1 <= MAX_LEVEL)
+        {
+            LoadLevel(++currentLevel);
+            return;
+        }
+        else
+        {
+            currentGamescreen = SCREEN_TITLE;
+            isGameOver = NOT_OVER;
+            didScratchPlay = false;
+            currentLevel = 0;
+        }
+    }
     int fontSize = 48;
     BeginDrawing();
     if(isGameOver == WON)
@@ -439,8 +495,18 @@ static void UpdateDrawGameOver(void)
     }
     else
     {
+        if(!didScratchPlay)
+        {
+            PlaySound(scratch);
+            didScratchPlay = true;
+        }
+        if(IsMusicStreamPlaying(tunnelVision))
+        {
+            StopMusicStream(tunnelVision);
+        }
         ClearBackground(CDARKRED);
-        
+        const char *gameOverLabel = "GAME OVER";
+        DrawText(gameOverLabel, GetScreenWidth()/2 - MeasureText(gameOverLabel, fontSize) / 2, GetScreenHeight()/4 - fontSize / 2, fontSize, CORANGE );
         if(isGameOver == DEAD)
         {
             const char *gameOverText = "YOU DIED";
@@ -462,6 +528,143 @@ static void UpdateDrawGameOver(void)
             DrawText(gameOverText, GetScreenWidth()/2 - MeasureText(gameOverText, fontSize) / 2, GetScreenHeight()/2 - fontSize / 2, fontSize, CYELLOW );
         }
     }       
-    
+    float pressSpaceWidth = MeasureText("Press [SPACE] to start", 30);
+    DrawText("Press [SPACE] to start", GetScreenWidth() / 2 - pressSpaceWidth / 2, GetScreenHeight() - 128, 30, CORANGE );
     EndDrawing();
+}
+
+
+
+static void UpdateDrawLogoScreen(void)
+{
+    logoScreenTime += GetFrameTime();
+    if(logoScreenTime >= logoScreenMaxTime)
+    {
+        //currentGamescreen = SCREEN_TITLE;
+    }
+    if(IsKeyPressed(KEY_SPACE))
+    {
+        currentGamescreen = SCREEN_TITLE;
+    }
+
+
+    BeginDrawing();
+    ClearBackground(CBLUE);
+    int LogoSquareMaxSize = GetScreenHeight() - 80;
+    Rectangle LogoSquare = {
+        GetScreenWidth() / 2 - (LogoSquareMaxSize / 2),
+        GetScreenHeight() / 2 - (LogoSquareMaxSize / 2),
+        LogoSquareMaxSize,
+        LogoSquareMaxSize
+    };
+    float backgroundRectangleHeight = LogoSquareMaxSize / 6;
+    int line = 0;
+    for(int i=6; i>=1; i--)
+    {   
+        float y = LogoSquare.y + line * backgroundRectangleHeight;
+        DrawRectangle(LogoSquare.x, y, LogoSquareMaxSize, backgroundRectangleHeight, palette[i]);
+        line++;
+    }
+    DrawRectangleLinesEx(LogoSquare, 8, CYELLOW);
+    float raylibX = GetScreenWidth() / 2 - MeasureText("raylib", 60) / 2;
+    DrawText("powered by", LogoSquare.x, LogoSquare.y - 10, 10, CYELLOW);
+    DrawText("raylib", raylibX, GetScreenHeight() / 2 - 40, 60, CYELLOW);
+    EndDrawing();
+}
+
+static void UpdateDrawTitleScreen(void)
+{
+    if(IsKeyPressed(KEY_SPACE))
+    {
+        currentGamescreen = SCREEN_GAMEPLAY;
+    }
+    BeginDrawing();
+    ClearBackground(CBLUE);
+    float titleWidth = MeasureText("Catch the connection", 60);
+    DrawText("Catch the connection", GetScreenWidth() / 2 - titleWidth / 2, 40, 60, CYELLOW );
+    float catchPhraseWidth = MeasureText("Based on a true story", 20);
+    DrawText("Based on a true story", GetScreenWidth() / 2 - catchPhraseWidth / 2, 100, 20, CYELLOW );
+    float pressSpaceWidth = MeasureText("Press [SPACE] to start", 30);
+    // DrawText("Have you ever tried to catch a train connection in Paris ?\n This is how it feels like")
+    DrawText("Press [SPACE] to start", GetScreenWidth() / 2 - pressSpaceWidth / 2, GetScreenHeight() - 128, 30, CORANGE );
+    EndDrawing();
+
+}
+static void UpdateDrawPauseScreen(void)
+{
+    return;
+}
+
+void UnloadLevel(void)
+{
+    return;
+}
+Level LoadLevel(int levelId)
+{
+    Level lev;
+    int id;
+    float time;
+    float x;
+    float y;
+    float z;
+
+    isGameOver = NOT_OVER;
+    playerLife = 100.0f;
+    playerSpeed = 0.0f;
+    playerRotationAngle =  PI * 1.5;
+    playerTurnDirection = 0;
+    char filename[28];
+    sprintf(filename, "resources/levels/level%d.txt", levelId);
+    FILE *levelFile;
+    if((levelFile = fopen(filename, "r")) == NULL)
+    {
+        // panic
+        lev.id = -1;
+        return lev;
+    }
+
+    int line = 0;
+    fscanf(levelFile, "%d", &id);
+    line++;
+    while(!feof(levelFile))
+    {
+        if(line == 1) fscanf(levelFile, "%f", &time);
+        if(line == 2) fscanf(levelFile, "%f", &x);
+        if(line == 3) fscanf(levelFile, "%f", &y);
+        if(line == 4) fscanf(levelFile, "%f", &z);
+        line++;
+    }
+    fclose(levelFile);
+    lev.id = id;
+    lev.time = time;
+    lev.startingPosition.x = x;
+    lev.startingPosition.y = y;
+    lev.startingPosition.z = z;
+
+    levelTime = time;
+    char mapFilename[24];
+    sprintf(mapFilename, "resources/level%dmap.png", levelId);
+    Image image = LoadImage(mapFilename);
+    mapTexture = LoadTextureFromImage(image);
+
+    char pauseMapFilename[30];
+    sprintf(pauseMapFilename, "resources/level%dmap_pause.png", levelId);
+    levelMapTexture = LoadTexture(pauseMapFilename);
+
+    Mesh mesh = GenMeshCubicmapMulticolor(image, (Vector3){ 1.0f, 1.0f, 1.0f }, CPURPLE, CBLUE);
+    model = LoadModelFromMesh(mesh);
+
+    atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = atlasTexture;    // Set map diffuse texture
+
+    // Get map image data to be used for collision detection
+    mapPixels = LoadImageColors(image);
+
+    playerWorldPosition.x = lev.startingPosition.x;
+    playerWorldPosition.y = lev.startingPosition.y;
+    playerWorldPosition.z = lev.startingPosition.z;
+
+    UnloadImage(image);     // Unload cubesmap image from RAM, already uploaded to VRAM
+    PlayMusicStream(tunnelVision);
+    return lev;
 }
