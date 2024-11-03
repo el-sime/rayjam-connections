@@ -296,17 +296,17 @@ void UpdateDrawFrame(void)
         playerTurnDirection = 1;
     }
 
-    if(IsKeyPressed(KEY_SPACE))
-    {
-        if (playerSpeed > 0) 
-        {
-            playerSpeed = 0;
-        }
-        else
-        {
-            playerSpeed = playerMinSpeed;
-        }
-    }
+    // if(IsKeyPressed(KEY_SPACE))
+    // {
+    //     if (playerSpeed > 0) 
+    //     {
+    //         playerSpeed = 0;
+    //     }
+    //     else
+    //     {
+    //         playerSpeed = playerMinSpeed;
+    //     }
+    // }
     if(
         (playerTurnDirection == -1 && IsKeyReleased(KEY_A)) ||
         (playerTurnDirection == 1 && IsKeyReleased(KEY_D))
