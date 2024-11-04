@@ -14,6 +14,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "constants.h"
+#include "screens.h"
 #include "cubemap.h"
 
 #define MAX_LEVEL 2
@@ -54,12 +55,8 @@ Color palette[MAX_PALETTE_COLORS] = {
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
-typedef enum { 
-    SCREEN_LOGO = 0, 
-    SCREEN_TITLE, 
-    SCREEN_GAMEPLAY, 
-    SCREEN_ENDING
-} GameScreen;
+
+
 
 // TODO: Define your custom data types here
 typedef enum {
@@ -92,6 +89,14 @@ void UnloadLevel(void);
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
+GameScreen currentGameScreen;
+
+
+
+
+
+
+
 static const int screenWidth = 800;
 static const int screenHeight = 450;
 
@@ -147,10 +152,6 @@ static int currentLevel = 0;
 static Texture2D levelMapTexture;
 static float levelTime = 0.0f;
 
-
-GameScreen currentGamescreen = SCREEN_LOGO;
-
-
 static float logoScreenTime = 0.0;
 static float logoScreenMaxTime = 3.0;
 //----------------------------------------------------------------------------------
@@ -161,7 +162,6 @@ static void MovePlayer(void);
 static void UpdateCustomCamera(void);
 static void UpdateDrawGameOver(void);
 
-static void UpdateDrawLogoScreen(void);
 static void UpdateDrawTitleScreen(void);
 static void UpdateDrawPauseScreen(void);
 //------------------------------------------------------------------------------------
@@ -176,7 +176,7 @@ int main(void)
     // Initialization
     //--------------------------------------------------------------------------------------
     InitWindow(screenWidth, screenHeight, "Catch the connection");
-    
+    currentGameScreen = SCREEN_LOGO;
     // TODO: Load resources / Initialize variables at this point
     // Define the camera to look into our 3d world
     
@@ -248,12 +248,13 @@ int main(void)
 // Update and draw frame
 void UpdateDrawFrame(void)
 {
-    if(currentGamescreen == SCREEN_LOGO)
+    if(currentGameScreen == SCREEN_LOGO)
     {
         UpdateDrawLogoScreen();
+        if (IsScreenLogoFinished()) currentGameScreen = SCREEN_TITLE;
         return;
     }
-    if(currentGamescreen == SCREEN_TITLE)
+    if(currentGameScreen == SCREEN_TITLE)
     {
         UpdateDrawTitleScreen();
         return;
@@ -479,7 +480,7 @@ static void UpdateDrawGameOver(void)
         }
         else
         {
-            currentGamescreen = SCREEN_TITLE;
+            currentGameScreen = SCREEN_TITLE;
             isGameOver = NOT_OVER;
             didScratchPlay = false;
             currentLevel = 0;
@@ -535,48 +536,13 @@ static void UpdateDrawGameOver(void)
 
 
 
-static void UpdateDrawLogoScreen(void)
-{
-    logoScreenTime += GetFrameTime();
-    if(logoScreenTime >= logoScreenMaxTime)
-    {
-        currentGamescreen = SCREEN_TITLE;
-    }
-    if(IsKeyPressed(KEY_SPACE))
-    {
-        currentGamescreen = SCREEN_TITLE;
-    }
 
-
-    BeginDrawing();
-    ClearBackground(CBLUE);
-    int LogoSquareMaxSize = GetScreenHeight() - 80;
-    Rectangle LogoSquare = {
-        GetScreenWidth() / 2 - (LogoSquareMaxSize / 2),
-        GetScreenHeight() / 2 - (LogoSquareMaxSize / 2),
-        LogoSquareMaxSize,
-        LogoSquareMaxSize
-    };
-    float backgroundRectangleHeight = LogoSquareMaxSize / 6;
-    int line = 0;
-    for(int i=6; i>=1; i--)
-    {   
-        float y = LogoSquare.y + line * backgroundRectangleHeight;
-        DrawRectangle(LogoSquare.x, y, LogoSquareMaxSize, backgroundRectangleHeight, palette[i]);
-        line++;
-    }
-    DrawRectangleLinesEx(LogoSquare, 8, CYELLOW);
-    float raylibX = GetScreenWidth() / 2 - MeasureText("raylib", 60) / 2;
-    DrawText("powered by", LogoSquare.x, LogoSquare.y - 10, 10, CYELLOW);
-    DrawText("raylib", raylibX, GetScreenHeight() / 2 - 40, 60, CYELLOW);
-    EndDrawing();
-}
 
 static void UpdateDrawTitleScreen(void)
 {
     if(IsKeyPressed(KEY_SPACE))
     {
-        currentGamescreen = SCREEN_GAMEPLAY;
+        currentGameScreen = SCREEN_GAMEPLAY;
     }
     BeginDrawing();
     ClearBackground(CBLUE);
