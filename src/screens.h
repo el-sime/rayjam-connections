@@ -8,17 +8,20 @@ typedef enum {
 } GameScreen;
 
 /********** GLOBALS **********/
-extern GameScreen currentGameScreen;
 extern Color palette[MAX_PALETTE_COLORS];
 
 /******** LOGO SCREEN ********/
-
 void UpdateDrawLogoScreen(void);
-bool IsScreenLogoFinished(void);
+bool IsLogoScreenFinished(void);
 
-/****** GAMEPLAY SCREEN ******/
+/******* TITLE  SCREEN *******/
+void InitTitleScreen(void);
+void UpdateDrawTitleScreen(void);
+bool IsTitleScreenFinished(void);
 
-void UpdateDrawGameplay(void);
-
+// /****** GAMEPLAY SCREEN ******/
+// void InitGamePlayScreen(void);
+// void UpdateDrawGameplayScreen(void);
+// bool IsGameplayScreenFinished(void);
 /*****************************/
 #endif
