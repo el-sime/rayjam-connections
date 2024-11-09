@@ -20,8 +20,8 @@ void UpdateDrawTitleScreen(void);
 bool IsTitleScreenFinished(void);
 
 // /****** GAMEPLAY SCREEN ******/
-// void InitGamePlayScreen(void);
-// void UpdateDrawGameplayScreen(void);
-// bool IsGameplayScreenFinished(void);
+void InitGamePlayScreen(void);
+void UpdateDrawGameplayScreen(void);
+bool IsGameplayScreenFinished(void);
 /*****************************/
 #endif

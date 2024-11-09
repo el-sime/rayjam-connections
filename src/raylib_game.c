@@ -106,31 +106,10 @@ static Vector2 playerMapPosition;
 
 
 
-Camera camera = { 0 };
 Vector3 mapPosition = { 0.0f, 0.0f, 0.0f };          // Set model position
 Model model;
 Texture2D mapTexture;
 
-// Player
-static Vector3 playerWorldPosition = {0.0f, 0.0f, 0.0f};
-static float playerMinSpeed = 1.0f; // pixels /s 
-static float playerMaxSpeed = 5.0f; // pixels /s 
-static float playerSpeed; // pixels / sec
-static float playerAcceleration = 10;
-static float playerRotationAngle =  PI * 1.5;//PI * 1.5;
-static int playerTurnDirection = 0;
-static float playerTurnSpeed = 90 * (PI / 180); // 90 deg per second
-static float playerLife = 100.0f;
-static float playerBaseGraceTime = 1.5f;
-static float playerGraceTime = 0;
-static float playerMinimapSize = 8;
-static bool isPlayerVisible = true;
-static int playerAnimationFrame = 0;
-static float playerAnimationTime = 0.0f;
-static int playerAnimationMaxFrames = 5;
-static float playerAnimationFrameDuration = 0.3;// = 100 / 5;
-static int playerAnimationFrameWidth;
-static Texture2D playerAnimationTexture;
 
 Texture2D atlasTexture;
 static Color *mapPixels; // for collisions
@@ -179,11 +158,7 @@ int main(void)
     // TODO: Load resources / Initialize variables at this point
     // Define the camera to look into our 3d world
     
-    camera.position = (Vector3){ 0.0f, 0.4f, 0.0f };
-    camera.target = (Vector3){ 2.0f, 0.4f, 15.0f };
-    camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
+   
 
     
     
@@ -199,8 +174,7 @@ int main(void)
     SetMusicVolume(tunnelVision, 0.3);
     
 
-    playerAnimationTexture = LoadTexture("resources/player_spritesheet.png");
-    playerAnimationFrameWidth = playerAnimationTexture.width / playerAnimationMaxFrames;
+    
     DisableCursor();  
 
     
@@ -260,12 +234,7 @@ void UpdateDrawFrame(void)
         return;
     }
 
-    // if(isGamePaused)
-    // {
-    //     UpdateDrawPauseScreen();
-    // }
-
-    if(playerSpeed == 0) playerAnimationFrameDuration = 100000;//horrible hack
+   
     if(playerSpeed >= 1 && playerSpeed < 2.5) playerAnimationFrameDuration = 0.3;
     if(playerSpeed >= 2.5 && playerSpeed < 3.5) playerAnimationFrameDuration = 0.2;
     if(playerSpeed >= 3.5 && playerSpeed <= 5) playerAnimationFrameDuration = 0.1;
@@ -279,51 +248,12 @@ void UpdateDrawFrame(void)
         LoadLevel(++currentLevel);
         return;
     }
+    
     UpdateMusicStream(tunnelVision);
     // Update
     //----------------------------------------------------------------------------------
-    if(playerGraceTime > 0)
-    {
-        playerGraceTime -= GetFrameTime();
-    }
+    
 
-    if(IsKeyPressed(KEY_A))
-    {
-        playerTurnDirection = -1;
-    }
-
-    if(IsKeyPressed(KEY_D))
-    {
-        playerTurnDirection = 1;
-    }
-
-    // if(IsKeyPressed(KEY_SPACE))
-    // {
-    //     if (playerSpeed > 0) 
-    //     {
-    //         playerSpeed = 0;
-    //     }
-    //     else
-    //     {
-    //         playerSpeed = playerMinSpeed;
-    //     }
-    // }
-    if(
-        (playerTurnDirection == -1 && IsKeyReleased(KEY_A)) ||
-        (playerTurnDirection == 1 && IsKeyReleased(KEY_D))
-    ) 
-    {
-        playerTurnDirection = 0;
-    }
-
-    if(IsKeyDown(KEY_W))
-    {
-        playerSpeed = Clamp(playerSpeed + playerAcceleration * GetFrameTime(), playerMinSpeed, playerMaxSpeed);
-    }
-    if(IsKeyDown(KEY_S))
-    {
-        playerSpeed = Clamp(playerSpeed - playerAcceleration * GetFrameTime(), playerMinSpeed, playerMaxSpeed);
-    }
     levelTime -= GetFrameTime();
 
     if(levelTime <= 0.0f)
@@ -345,21 +275,13 @@ void UpdateDrawFrame(void)
 
         
         
-        //Draw the player
-        playerAnimationTime += GetFrameTime();
-        if (playerAnimationTime >= playerAnimationFrameDuration)
-        {
-            playerAnimationTime = 0.0f;
-            if(playerAnimationFrame < playerAnimationMaxFrames - 1)
-            {
-                playerAnimationFrame++;
-            }
-            else
-            {
-                playerAnimationFrame = 0;
-            }
-        }
-        Rectangle sourceRec =      {playerAnimationFrame * playerAnimationFrameWidth, 0, playerAnimationFrameWidth, playerAnimationTexture.height};
+       
+        Rectangle sourceRec =      {
+            playerAnimationFrame * playerAnimationFrameWidth,
+            0, 
+            playerAnimationFrameWidth,
+            playerAnimationTexture.height
+        };
         Rectangle destinationRec = {GetScreenWidth() / 2 - playerAnimationFrameWidth, GetScreenHeight() - playerAnimationTexture.height * 3, playerAnimationFrameWidth * 3, playerAnimationTexture.height * 3};
 
         DrawTexturePro(
@@ -551,6 +473,7 @@ Level LoadLevel(int levelId)
     float x;
     float y;
     float z;
+    float startingAngle;
 
     isGameOver = NOT_OVER;
     playerLife = 100.0f;
@@ -576,6 +499,7 @@ Level LoadLevel(int levelId)
         if(line == 2) fscanf(levelFile, "%f", &x);
         if(line == 3) fscanf(levelFile, "%f", &y);
         if(line == 4) fscanf(levelFile, "%f", &z);
+        if(line == 5) fscanf(levelFile, "%f", &startingAngle);
         line++;
     }
     fclose(levelFile);

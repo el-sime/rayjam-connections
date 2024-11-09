@@ -32,7 +32,7 @@ PLATFORM              ?= PLATFORM_DESKTOP
 PROJECT_NAME          ?= raylib_game
 PROJECT_VERSION       ?= 1.0
 PROJECT_BUILD_PATH    ?= .
-PROJECT_SOURCE_FILES  ?= raylib_game.c cubemap.c screen_logo.c screen_title.c
+PROJECT_SOURCE_FILES  ?= raylib_game.c cubemap.c screen_logo.c screen_title.c screen_gameplay.c player.c
 
 # raylib library variables
 RAYLIB_SRC_PATH       ?= C:/raylib/raylib/src
