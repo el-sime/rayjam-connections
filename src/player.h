@@ -31,6 +31,6 @@ typedef struct Player{
 
 void InitPlayer(Player *player);
 void UpdateDrawPlayer(Player *player);
-
+void MovePlayer(Player *player);
 
 #endif

@@ -235,10 +235,6 @@ void UpdateDrawFrame(void)
     }
 
    
-    if(playerSpeed >= 1 && playerSpeed < 2.5) playerAnimationFrameDuration = 0.3;
-    if(playerSpeed >= 2.5 && playerSpeed < 3.5) playerAnimationFrameDuration = 0.2;
-    if(playerSpeed >= 3.5 && playerSpeed <= 5) playerAnimationFrameDuration = 0.1;
-
     if(isGameOver > -1){
         UpdateDrawGameOver();
         return;
@@ -276,22 +272,7 @@ void UpdateDrawFrame(void)
         
         
        
-        Rectangle sourceRec =      {
-            playerAnimationFrame * playerAnimationFrameWidth,
-            0, 
-            playerAnimationFrameWidth,
-            playerAnimationTexture.height
-        };
-        Rectangle destinationRec = {GetScreenWidth() / 2 - playerAnimationFrameWidth, GetScreenHeight() - playerAnimationTexture.height * 3, playerAnimationFrameWidth * 3, playerAnimationTexture.height * 3};
-
-        DrawTexturePro(
-            playerAnimationTexture,
-            sourceRec,
-            destinationRec,
-            (Vector2){0,0},
-            0.0f,
-            WHITE
-        );
+        
 
         DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
         DrawText(TextFormat("Speed: %.2f", playerSpeed),10, 40, 20, CYELLOW );
