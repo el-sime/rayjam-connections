@@ -29,7 +29,8 @@ typedef struct Player{
 
 
 void InitPlayer(Player *player);
-void UpdateDrawPlayer(Player *player);
+void UpdateDrawPlayer(Player *player, float deltaTime);
 void MovePlayer(Player *player);
+void HandlePlayerInput(Player *player);
 
 #endif

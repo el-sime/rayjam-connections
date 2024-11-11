@@ -1,8 +1,9 @@
+#include <stdio.h>
 #include "raylib.h"
 #include "constants.h"
 #include "screens.h"
 #include "screen_gameplay.h"
-
+#include "cubemap.h"
 #include "player.h"
 
 
@@ -10,6 +11,7 @@
 
 void InitGameplayScreen(void)
 {
+
     camera.position = (Vector3){ 0.0f, 0.4f, 0.0f };
     camera.target = (Vector3){ 2.0f, 0.4f, 15.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
@@ -25,6 +27,9 @@ void InitGameplayScreen(void)
     tunnelVision.looping = true;
     SetMusicVolume(tunnelVision, 0.3);
     InitPlayer(&player);
+
+    atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
+    LoadLevel(1, &player);
 }
 
 static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
@@ -73,5 +78,69 @@ void UnloadGameplayScreen(void)
 
 void UpdateDrawGameplayScreen(void)
 {
+    float deltaTime = GetFrameTime();
+    BeginDrawing();
+    ClearBackground(CBLUE);
+    if(state == STATE_PLAYING)
+    {
+        UpdateDrawPlayer(&player, deltaTime);
+
+    }
+   
     DrawText("GAMEPLAY!", 30, 30, 30, BLACK);
+    EndDrawing();
+}
+
+static void LoadLevel(int levelId, Player *player)
+{
+    char filename[28];
+    sprintf(filename, "resources/levels/level%d.txt", levelId);
+    
+    FILE *levelFile;
+    if((levelFile = fopen(filename, "r")) == NULL)
+    {
+        // panic
+        levelId = -1;
+        return;
+    }
+    int id;
+    
+
+    int line = 0;
+    fscanf(levelFile, "%d", &id);
+    line++;
+    while(!feof(levelFile))
+    {
+        if(line == 1) fscanf(levelFile, "%f", &levelTime);
+        if(line == 2) fscanf(levelFile, "%f", player->worldPosition.x);
+        if(line == 3) fscanf(levelFile, "%f", player->worldPosition.y);
+        if(line == 4) fscanf(levelFile, "%f", player->worldPosition.z);
+        if(line == 5) fscanf(levelFile, "%f", player->rotationAngle);
+        line++;
+    }
+    fclose(levelFile);
+    
+    char mapFilename[24];
+    sprintf(mapFilename, "resources/level%dmap.png", levelId);
+    Image image = LoadImage(mapFilename);
+    mapTexture = LoadTextureFromImage(image);
+    mapPixels = LoadImageColors(image);
+    
+    Mesh mesh = GenMeshCubicmapMulticolor(image, (Vector3){ 1.0f, 1.0f, 1.0f }, CPURPLE, CBLUE);
+    model = LoadModelFromMesh(mesh);
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = atlasTexture;
+
+    UnloadImage(image);
+    return;
+}
+
+
+static void UpdateCustomCamera(Player *player)
+{
+    camera.position.x = player->worldPosition.x;
+    camera.position.z = player->worldPosition.y;
+
+    camera.target.x = camera.position.x + (cosf(player->rotationAngle) * 50);
+    camera.target.z = camera.position.z + (sinf(player->rotationAngle) * 50);
+    //DrawLine(playerScreenPosition.x, playerScreenPosition.y, playerScreenPosition.x + (cosf(playerRotationAngle) * playerMinimapSize), playerScreenPosition.y + (sinf(playerRotationAngle) * playerMinimapSize), palette[7]);
 }

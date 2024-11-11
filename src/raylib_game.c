@@ -104,7 +104,7 @@ int main(void)
     
     
     DisableCursor();  
-
+    SetExitKey(KEY_NULL);       // Disable KEY_ESCAPE to close window, X-button still works
     
 
 
@@ -153,40 +153,19 @@ void UpdateDrawFrame(void)
         if (IsTitleScreenFinished()) currentGameScreen = SCREEN_GAMEPLAY;
         return;
     }
-
+    if(currentGameScreen == SCREEN_GAMEPLAY)
+    {
+        UpdateDrawGameplayScreen();
+    }
    
-    if(isGameOver > -1){
-        UpdateDrawGameOver();
-        return;
-    }
-    if (currentLevel == 0)
-    {
-        LoadLevel(++currentLevel);
-        return;
-    }
-    
-    UpdateMusicStream(tunnelVision);
-    // Update
-    //----------------------------------------------------------------------------------
-    
 
-    levelTime -= GetFrameTime();
+    // BeginDrawing();
+    //     ClearBackground(CBLUE);
+    //     BeginMode3D(camera);
 
-    if(levelTime <= 0.0f)
-    {
-        isGameOver = TIMESUP;
-    }
+    //         DrawModel(model, mapPosition, 1.0f, WHITE);
 
-    MovePlayer();
-    UpdateCustomCamera();
-
-    BeginDrawing();
-        ClearBackground(CBLUE);
-        BeginMode3D(camera);
-
-            DrawModel(model, mapPosition, 1.0f, WHITE);
-
-        EndMode3D();
+    //     EndMode3D();
         
 
         
@@ -194,218 +173,62 @@ void UpdateDrawFrame(void)
        
         
 
-        DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
-        DrawText(TextFormat("Speed: %.2f", playerSpeed),10, 40, 20, CYELLOW );
-        DrawRectangle(GetScreenWidth()/2 - 52, 4, 104, 44, CPURPLE);
-        DrawRectangle(GetScreenWidth()/2 - 50, 6, playerLife, 40, CORANGE);
-    EndDrawing();
+    //     DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
+    //     DrawText(TextFormat("Speed: %.2f", playerSpeed),10, 40, 20, CYELLOW );
+    //     DrawRectangle(GetScreenWidth()/2 - 52, 4, 104, 44, CPURPLE);
+    //     DrawRectangle(GetScreenWidth()/2 - 50, 6, playerLife, 40, CORANGE);
+    // EndDrawing();
     //----------------------------------------------------------------------------------  
 }
 
 
 
-static void MovePlayer(void)
-{
-    if( collision != NO_COLLISION)
-    {
-        if(collision == WALL || collision == OBSTACLE)
-        {
-            if(playerGraceTime <= 0)
-            {
-                //calculate damage based on speed
-                float dmg = playerSpeed * 10.0f;
-                playerLife -= dmg;
-                if(dmg <= 15.0f)
-                {
-                    PlaySound(smallOuch);
-                }
-                if(dmg > 15.0f && dmg <= 35.0f)
-                {
-                    PlaySound(bigOuch);
-                }
-                if(dmg > 35.0f)
-                {
-                    PlaySound(OuhMother);
-                }
-                if (playerLife <= 0)
-                {
-                    isGameOver = DEAD;
-                }
-                playerGraceTime = playerBaseGraceTime;
-            }
-        }
-        else if(collision == BADTRAIN)
-        {
-            isGameOver = WRONGTRAIN;
-        }
-        else if(collision == EXIT)
-        {
-            isGameOver = LEFTSTATION;
-        }
-        else if(collision == CONNECTION)
-        {
-            isGameOver = WON;
-        }
-    }
-    else
-    {
-        playerWorldPosition.x = playerNewX;
-        playerWorldPosition.y = playerNewY;
-    }
-}
-
-static void UpdateCustomCamera(void)
-{
-    camera.position.x = playerWorldPosition.x;
-    camera.position.z = playerWorldPosition.y;
-
-    camera.target.x = camera.position.x + (cosf(playerRotationAngle) * 50);
-    camera.target.z = camera.position.z + (sinf(playerRotationAngle) * 50);
-    //DrawLine(playerScreenPosition.x, playerScreenPosition.y, playerScreenPosition.x + (cosf(playerRotationAngle) * playerMinimapSize), playerScreenPosition.y + (sinf(playerRotationAngle) * playerMinimapSize), palette[7]);
-}
-
-static void UpdateDrawGameOver(void)
-{
-    if(IsKeyPressed(KEY_SPACE))
-    {
-        if(isGameOver == WON && currentLevel + 1 <= MAX_LEVEL)
-        {
-            LoadLevel(++currentLevel);
-            return;
-        }
-        else
-        {
-            currentGameScreen = SCREEN_TITLE;
-            isGameOver = NOT_OVER;
-            didScratchPlay = false;
-            currentLevel = 0;
-        }
-    }
-    int fontSize = 48;
-    BeginDrawing();
-    if(isGameOver == WON)
-    {
-        ClearBackground(CPURPLE);
-        const char *gameOverText = "YOU WON!";
-        DrawText(gameOverText, GetScreenWidth()/2 - MeasureText(gameOverText, fontSize) / 2, GetScreenHeight()/2 - fontSize / 2, fontSize, CYELLOW );
-    }
-    else
-    {
-        if(!didScratchPlay)
-        {
-            PlaySound(scratch);
-            didScratchPlay = true;
-        }
-        if(IsMusicStreamPlaying(tunnelVision))
-        {
-            StopMusicStream(tunnelVision);
-        }
-        ClearBackground(CDARKRED);
-        const char *gameOverLabel = "GAME OVER";
-        DrawText(gameOverLabel, GetScreenWidth()/2 - MeasureText(gameOverLabel, fontSize) / 2, GetScreenHeight()/4 - fontSize / 2, fontSize, CORANGE );
-        if(isGameOver == DEAD)
-        {
-            const char *gameOverText = "YOU DIED";
-            DrawText(gameOverText, GetScreenWidth()/2 - MeasureText(gameOverText, fontSize) / 2, GetScreenHeight()/2 - fontSize / 2, fontSize, CYELLOW );
-        }
-        else if(isGameOver == TIMESUP)
-        {
-            const char *gameOverText = "YOU MISSED YOUR CONNECTION";
-            DrawText(gameOverText, GetScreenWidth()/2 - MeasureText(gameOverText, fontSize) / 2, GetScreenHeight()/2 - fontSize / 2, fontSize, CYELLOW );
-        }
-        else if(isGameOver == WRONGTRAIN)
-        {
-            const char *gameOverText = "YOU GOT ON THE WRONG TRAIN";
-            DrawText(gameOverText, GetScreenWidth()/2 - MeasureText(gameOverText, fontSize) / 2, GetScreenHeight()/2 - fontSize / 2, fontSize, CYELLOW );
-        }
-        else if(isGameOver == LEFTSTATION)
-        {
-            const char *gameOverText = "YOU LEFT THE STATION";
-            DrawText(gameOverText, GetScreenWidth()/2 - MeasureText(gameOverText, fontSize) / 2, GetScreenHeight()/2 - fontSize / 2, fontSize, CYELLOW );
-        }
-    }       
-    float pressSpaceWidth = MeasureText("Press [SPACE] to start", 30);
-    DrawText("Press [SPACE] to start", GetScreenWidth() / 2 - pressSpaceWidth / 2, GetScreenHeight() - 128, 30, CORANGE );
-    EndDrawing();
-}
-
-
-
-
-
-
-void UnloadLevel(void)
-{
-    return;
-}
-Level LoadLevel(int levelId)
-{
-    Level lev;
-    int id;
-    float time;
-    float x;
-    float y;
-    float z;
-    float startingAngle;
-
-    isGameOver = NOT_OVER;
-    playerLife = 100.0f;
-    playerSpeed = 0.0f;
-    playerRotationAngle =  PI * 1.5;
-    playerTurnDirection = 0;
-    char filename[28];
-    sprintf(filename, "resources/levels/level%d.txt", levelId);
-    FILE *levelFile;
-    if((levelFile = fopen(filename, "r")) == NULL)
-    {
-        // panic
-        lev.id = -1;
-        return lev;
-    }
-
-    int line = 0;
-    fscanf(levelFile, "%d", &id);
-    line++;
-    while(!feof(levelFile))
-    {
-        if(line == 1) fscanf(levelFile, "%f", &time);
-        if(line == 2) fscanf(levelFile, "%f", &x);
-        if(line == 3) fscanf(levelFile, "%f", &y);
-        if(line == 4) fscanf(levelFile, "%f", &z);
-        if(line == 5) fscanf(levelFile, "%f", &startingAngle);
-        line++;
-    }
-    fclose(levelFile);
-    lev.id = id;
-    lev.time = time;
-    lev.startingPosition.x = x;
-    lev.startingPosition.y = y;
-    lev.startingPosition.z = z;
-
-    levelTime = time;
-    char mapFilename[24];
-    sprintf(mapFilename, "resources/level%dmap.png", levelId);
-    Image image = LoadImage(mapFilename);
-    mapTexture = LoadTextureFromImage(image);
-
-    char pauseMapFilename[30];
-    sprintf(pauseMapFilename, "resources/level%dmap_pause.png", levelId);
-    levelMapTexture = LoadTexture(pauseMapFilename);
-
-    Mesh mesh = GenMeshCubicmapMulticolor(image, (Vector3){ 1.0f, 1.0f, 1.0f }, CPURPLE, CBLUE);
-    model = LoadModelFromMesh(mesh);
-
-    atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
-    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = atlasTexture;    // Set map diffuse texture
-
-    // Get map image data to be used for collision detection
-    mapPixels = LoadImageColors(image);
-
-    playerWorldPosition.x = lev.startingPosition.x;
-    playerWorldPosition.y = lev.startingPosition.y;
-    playerWorldPosition.z = lev.startingPosition.z;
-
-    UnloadImage(image);     // Unload cubesmap image from RAM, already uploaded to VRAM
-    PlayMusicStream(tunnelVision);
-    return lev;
-}
+// static void MovePlayer(void)
+// {
+//     if( collision != NO_COLLISION)
+//     {
+//         if(collision == WALL || collision == OBSTACLE)
+//         {
+//             if(playerGraceTime <= 0)
+//             {
+//                 //calculate damage based on speed
+//                 float dmg = playerSpeed * 10.0f;
+//                 playerLife -= dmg;
+//                 if(dmg <= 15.0f)
+//                 {
+//                     PlaySound(smallOuch);
+//                 }
+//                 if(dmg > 15.0f && dmg <= 35.0f)
+//                 {
+//                     PlaySound(bigOuch);
+//                 }
+//                 if(dmg > 35.0f)
+//                 {
+//                     PlaySound(OuhMother);
+//                 }
+//                 if (playerLife <= 0)
+//                 {
+//                     isGameOver = DEAD;
+//                 }
+//                 playerGraceTime = playerBaseGraceTime;
+//             }
+//         }
+//         else if(collision == BADTRAIN)
+//         {
+//             isGameOver = WRONGTRAIN;
+//         }
+//         else if(collision == EXIT)
+//         {
+//             isGameOver = LEFTSTATION;
+//         }
+//         else if(collision == CONNECTION)
+//         {
+//             isGameOver = WON;
+//         }
+//     }
+//     else
+//     {
+//         playerWorldPosition.x = playerNewX;
+//         playerWorldPosition.y = playerNewY;
+//     }
+// }
