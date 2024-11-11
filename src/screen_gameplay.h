@@ -28,6 +28,7 @@ typedef enum {
 } CollisionType;
 
 typedef enum {
+    STATE_NOTREADY = -1,
     STATE_INTRO = 0,
     STATE_PLAYING,
     STATE_PAUSED,

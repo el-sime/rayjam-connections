@@ -28,8 +28,12 @@ void InitGameplayScreen(void)
     SetMusicVolume(tunnelVision, 0.3);
     InitPlayer(&player);
 
+    state = STATE_PLAYING;
     atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
     LoadLevel(1, &player);
+    mapPosition.x = 0.0f;
+    mapPosition.y = 0.0f;
+    mapPosition.z = 0.0f;
 }
 
 static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
@@ -83,11 +87,16 @@ void UpdateDrawGameplayScreen(void)
     ClearBackground(CBLUE);
     if(state == STATE_PLAYING)
     {
+        levelTime -= deltaTime;
+        BeginMode3D(camera);
+            DrawModel(model, mapPosition, 1.0f, WHITE);
+        EndMode3D();
         UpdateDrawPlayer(&player, deltaTime);
-
+        DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
+        DrawText(TextFormat("Speed: %.2f", player.speed),10, 40, 20, CYELLOW );
     }
    
-    DrawText("GAMEPLAY!", 30, 30, 30, BLACK);
+    
     EndDrawing();
 }
 
@@ -104,7 +113,10 @@ static void LoadLevel(int levelId, Player *player)
         return;
     }
     int id;
-    
+    float x;
+    float y;
+    float z;
+    float angle;
 
     int line = 0;
     fscanf(levelFile, "%d", &id);
@@ -112,14 +124,21 @@ static void LoadLevel(int levelId, Player *player)
     while(!feof(levelFile))
     {
         if(line == 1) fscanf(levelFile, "%f", &levelTime);
-        if(line == 2) fscanf(levelFile, "%f", player->worldPosition.x);
-        if(line == 3) fscanf(levelFile, "%f", player->worldPosition.y);
-        if(line == 4) fscanf(levelFile, "%f", player->worldPosition.z);
-        if(line == 5) fscanf(levelFile, "%f", player->rotationAngle);
+        if(line == 2) fscanf(levelFile, "%f", &x);
+        if(line == 3) fscanf(levelFile, "%f", &y);
+        if(line == 4) fscanf(levelFile, "%f", &z);
+        if(line == 5) fscanf(levelFile, "%f", &angle);
         line++;
     }
     fclose(levelFile);
     
+    player->worldPosition.x = x;
+    player->worldPosition.y = y;
+    player->worldPosition.z = z;
+    player->rotationAngle = angle;
+
+
+
     char mapFilename[24];
     sprintf(mapFilename, "resources/level%dmap.png", levelId);
     Image image = LoadImage(mapFilename);

@@ -103,8 +103,8 @@ int main(void)
     // TODO: refactor by screen
     
     
-    DisableCursor();  
-    SetExitKey(KEY_NULL);       // Disable KEY_ESCAPE to close window, X-button still works
+    //5DisableCursor();  
+    //SetExitKey(KEY_NULL);       // Disable KEY_ESCAPE to close window, X-button still works
     
 
 
@@ -151,11 +151,13 @@ void UpdateDrawFrame(void)
     {
         UpdateDrawTitleScreen();
         if (IsTitleScreenFinished()) currentGameScreen = SCREEN_GAMEPLAY;
+        InitGameplayScreen();
         return;
     }
     if(currentGameScreen == SCREEN_GAMEPLAY)
     {
         UpdateDrawGameplayScreen();
+        return;
     }
    
 
