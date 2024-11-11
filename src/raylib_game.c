@@ -56,28 +56,6 @@ Color palette[MAX_PALETTE_COLORS] = {
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
 
-
-
-// TODO: Define your custom data types here
-typedef enum {
-    NOT_OVER = -1,
-    DEAD = 0,
-    TIMESUP,
-    WRONGTRAIN,
-    LEFTSTATION,
-    WON
-} GameOverReason;
-
-typedef enum {
-    NO_COLLISION = -1,
-    WALL = 0,
-    BADTRAIN,
-    EXIT,
-    OBSTACLE,
-    CONNECTION
-} CollisionType;
-
-
 typedef struct Level {
     int id;
     float time;
@@ -86,50 +64,16 @@ typedef struct Level {
 
 Level LoadLevel(int levelId);
 void UnloadLevel(void);
+
+
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 GameScreen currentGameScreen;
 
-
-
-
-
-
-
 static const int screenWidth = 800;
 static const int screenHeight = 450;
 
-static const int minimapSize = 100;
-
-static Vector2 playerMapPosition;
-
-
-
-Vector3 mapPosition = { 0.0f, 0.0f, 0.0f };          // Set model position
-Model model;
-Texture2D mapTexture;
-
-
-Texture2D atlasTexture;
-static Color *mapPixels; // for collisions
-
-static Sound smallOuch;
-static Sound bigOuch  ;
-static Sound OuhMother;
-static Sound scratch;
-
-static Music tunnelVision;
-
-static GameOverReason isGameOver = NOT_OVER;
-static bool didScratchPlay = false;
-
-
-static bool isGamePaused = true;
-
-static int currentLevel = 0;
-static Texture2D levelMapTexture;
-static float levelTime = 0.0f;
 
 static float logoScreenTime = 0.0;
 static float logoScreenMaxTime = 3.0;
@@ -137,11 +81,8 @@ static float logoScreenMaxTime = 3.0;
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
 static void UpdateDrawFrame(void);      // Update and Draw one frame
-static void MovePlayer(void);
-static void UpdateCustomCamera(void);
-static void UpdateDrawGameOver(void);
 
-static void UpdateDrawPauseScreen(void);
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -158,22 +99,9 @@ int main(void)
     // TODO: Load resources / Initialize variables at this point
     // Define the camera to look into our 3d world
     
-   
-
-    
-    
     InitAudioDevice();
     // TODO: refactor by screen
-    smallOuch = LoadSound("resources/sounds/smallouch.ogg");
-    bigOuch   = LoadSound("resources/sounds/OUCH.ogg");
-    OuhMother = LoadSound("resources/sounds/OUH_MOTHER.ogg");
-    scratch = LoadSound("resources/sounds/scratch.mp3");
-    tunnelVision = LoadMusicStream("resources/sounds/tunnel_vision.xm");
-    //tunnelVision
-    tunnelVision.looping = true;
-    SetMusicVolume(tunnelVision, 0.3);
     
-
     
     DisableCursor();  
 
@@ -198,15 +126,7 @@ int main(void)
 
     
 
-    UnloadTexture(mapTexture);    // Unload cubicmap texture
-    UnloadTexture(atlasTexture);
-    UnloadTexture(levelMapTexture);
-    UnloadModel(model);         // Unload map model
-    UnloadSound(smallOuch);
-    UnloadSound(bigOuch);
-    UnloadSound(OuhMother);
-    UnloadSound(scratch);
-    UnloadMusicStream(tunnelVision);
+    
     // TODO: Unload all loaded resources at this point
 
     CloseWindow();        // Close window and OpenGL context
@@ -286,34 +206,6 @@ void UpdateDrawFrame(void)
 
 static void MovePlayer(void)
 {
-    playerRotationAngle += playerTurnDirection * playerTurnSpeed * GetFrameTime();
-    float playerNewX = playerWorldPosition.x + cosf(playerRotationAngle) * (playerSpeed * GetFrameTime());
-    float playerNewY = playerWorldPosition.y + sinf(playerRotationAngle) * (playerSpeed * GetFrameTime());
-    float playerRadius = 0.1f;
-    //check next pixel for collisions 
-    int pixelX = playerNewX > playerWorldPosition.x ? floorf(playerNewX) : ceilf(playerNewX); 
-    int pixelY = playerNewY > playerWorldPosition.y ? floorf(playerNewY) : ceilf(playerNewY);
-    Color pixelColor = mapPixels[pixelY * mapTexture.width + pixelX];
-    CollisionType collision = NO_COLLISION;
-    for (int y = 0; (y < mapTexture.height && collision == NO_COLLISION) ; y++)
-    {
-        for (int x = 0; (x < mapTexture.width  && collision == NO_COLLISION); x++)
-        {
-            Color pixelColor = mapPixels[y*mapTexture.width + x];
-            if ( !COLOR_EQUAL(pixelColor, CPURPLE) &&       // Collision: white pixel, only check R channel
-                (CheckCollisionCircleRec((Vector2){playerNewX, playerNewY}, playerRadius,
-                (Rectangle){ mapPosition.x - 0.5f + x*1.0f, mapPosition.z - 0.5f + y*1.0f, 1.0f, 1.0f })))
-            {
-                collision = WALL;
-                //what kind of collision
-                if(COLOR_EQUAL(pixelColor, CDARKRED)) collision = CONNECTION;
-                if(COLOR_EQUAL(pixelColor, CORANGE))  collision = BADTRAIN;
-                if(COLOR_EQUAL(pixelColor, BLACK))  collision = EXIT;
-            }
-        }
-    }
-
-    
     if( collision != NO_COLLISION)
     {
         if(collision == WALL || collision == OBSTACLE)

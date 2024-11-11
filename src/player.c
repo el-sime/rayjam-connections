@@ -1,9 +1,11 @@
+#include <math.h>
 #include "raylib.h"
 #include "player.h"
 
 void InitPlayer(Player *player)
 {
     player->worldPosition = (Vector3){0.0f, 0.0f, 0.0f};
+    player->radius = 1.0f;
     player->speed = 0.0f;
     player->minSpeed = 1.0f;
     player->maxSpeed = 5.0f;
@@ -27,9 +29,8 @@ void InitPlayer(Player *player)
     return player;
 }
 
-void UpdateDrawPlayer(Player *player)
+void UpdateDrawPlayer(Player *player, float deltaTime)
 {
-    float deltaTime = GetFrameTime();
     if (player->graceTime > 0)
     {
         player->graceTime -= deltaTime;
@@ -59,6 +60,8 @@ void UpdateDrawPlayer(Player *player)
     {
         player->speed = Clamp(player->speed - player->acceleration * deltaTime, player->minSpeed, player->maxSpeed);
     }
+
+    player->rotationAngle += player->turnDirection * player->turnSpeed * deltaTime;
 
     player->animationTime += deltaTime;
     
@@ -101,4 +104,9 @@ void UpdateDrawPlayer(Player *player)
         0.0f,
         WHITE
     );
+}
+
+void MovePlayer(Player *player)
+{
+    return;
 }

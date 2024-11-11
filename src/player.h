@@ -5,6 +5,7 @@
 
 typedef struct Player{
     Vector3 worldPosition;
+    float radius;
     float speed;
     float minSpeed;
     float maxSpeed;
@@ -21,8 +22,6 @@ typedef struct Player{
     float graceTime;
     float healthPoints;
     float maxHealthPoints;
-
-
     Texture2D animationTexture;
 } Player;
 
