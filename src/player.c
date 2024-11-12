@@ -27,39 +27,17 @@ void InitPlayer(Player *player)
     player->graceTime = 0.0f;
     player->maxHealthPoints = 100.0f;
     player->healthPoints = player->maxHealthPoints;
+    player->damageFactor = 10.0f;
     return;
 }
 
 void UpdatePlayer(Player *player, float deltaTime)
 {
+    HandlePlayerInput(player, deltaTime);
+
     if (player->graceTime > 0)
     {
         player->graceTime -= deltaTime;
-    }
-
-    if(IsKeyPressed(KEY_A))
-    {
-        player->turnDirection = -1;
-    }
-    if(IsKeyPressed(KEY_D))
-    {
-        player->turnDirection = 1;
-    }
-    if(
-        (player->turnDirection == -1 && IsKeyReleased(KEY_A)) ||
-        (player->turnDirection == 1 && IsKeyReleased(KEY_D))
-    )
-    {
-        player->turnDirection = 0;
-    }
-
-    if(IsKeyDown(KEY_W))
-    {
-        player->speed = Clamp(player->speed + player->acceleration * deltaTime, player->minSpeed, player->maxSpeed);
-    }
-    if(IsKeyDown(KEY_S))
-    {
-        player->speed = Clamp(player->speed - player->acceleration * deltaTime, player->minSpeed, player->maxSpeed);
     }
 
     player->rotationAngle += player->turnDirection * player->turnSpeed * deltaTime;
@@ -111,7 +89,41 @@ void DrawPlayer(Player *player)
     );
 }
 
-void MovePlayer(Player *player)
+void HandlePlayerInput(Player *player, float deltaTime)
 {
+    if(IsKeyPressed(KEY_A))
+    {
+        player->turnDirection = -1;
+    }
+    if(IsKeyPressed(KEY_D))
+    {
+        player->turnDirection = 1;
+    }
+    if(
+        (player->turnDirection == -1 && IsKeyReleased(KEY_A)) ||
+        (player->turnDirection == 1 && IsKeyReleased(KEY_D))
+    )
+    {
+        player->turnDirection = 0;
+    }
+
+    if(IsKeyDown(KEY_W))
+    {
+        player->speed = Clamp(player->speed + player->acceleration * deltaTime, player->minSpeed, player->maxSpeed);
+    }
+    if(IsKeyDown(KEY_S))
+    {
+        player->speed = Clamp(player->speed - player->acceleration * deltaTime, player->minSpeed, player->maxSpeed);
+    }
     return;
+}
+
+
+Vector2 GetPlayerNextPosition(Player *player, float deltaTime)
+{
+    Vector2 newPosition;
+    newPosition.x = player->worldPosition.x + cosf(player->rotationAngle) * (player->speed * deltaTime);
+    newPosition.y = player->worldPosition.y + sinf(player->rotationAngle) * (player->speed * deltaTime);
+
+    return newPosition;
 }

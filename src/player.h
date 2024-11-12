@@ -22,6 +22,7 @@ typedef struct Player{
     float graceTime;
     float healthPoints;
     float maxHealthPoints;
+    float damageFactor;
     Texture2D animationTexture;
 } Player;
 
@@ -30,7 +31,7 @@ typedef struct Player{
 
 void InitPlayer(Player *player);
 void UpdatePlayer(Player *player, float deltaTime);
-void MovePlayer(Player *player);
-void HandlePlayerInput(Player *player);
+void HandlePlayerInput(Player *player, float deltaTime);
 void DrawPlayer(Player *player);
+Vector2 GetPlayerNextPosition(Player *player, float deltaTime);
 #endif

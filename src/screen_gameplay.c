@@ -35,45 +35,35 @@ void InitGameplayScreen(void)
 
 static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
 {
-    // check player collisions 
-    float playerNewX = player->worldPosition.x + cosf(player->rotationAngle) * (player->speed * deltaTime);
-    float playerNewY = player->worldPosition.y + sinf(player->rotationAngle) * (player->speed * deltaTime);
+    Vector2 newPosition = GetPlayerNextPosition(player, deltaTime);
+    int pixelX = newPosition.x > player->worldPosition.x ? floorf(newPosition.x) : ceilf(newPosition.x); 
+    int pixelY = newPosition.y > player->worldPosition.y ? floorf(newPosition.y) : ceilf(newPosition.y);
 
-    int pixelX = playerNewX > player->worldPosition.x ? floorf(playerNewX) : ceilf(playerNewX); 
-    int pixelY = playerNewY > player->worldPosition.y ? floorf(playerNewY) : ceilf(playerNewY);
-
-    CollisionType collision = NO_COLLISION;
-
-    for (int y = 0; (y < mapTexture.height && collision == NO_COLLISION) ; y++)
+    CollisionType collision = COLLISION_NO_COLLISION;
+    //TODO: restrict the check in an area around the player
+    for (int y = 0; (y < mapTexture.height && collision == COLLISION_NO_COLLISION) ; y++)
     {
-        for (int x = 0; (x < mapTexture.width  && collision == NO_COLLISION); x++)
+        for (int x = 0; (x < mapTexture.width  && collision == COLLISION_NO_COLLISION); x++)
         {
             int pixelIndex = y*mapTexture.width + x;
             Color pixelColor = mapPixels[pixelIndex];
             if ( !COLOR_EQUAL(pixelColor, CPURPLE) &&       // Collision: white pixel, only check R channel
-                (CheckCollisionCircleRec((Vector2){playerNewX, playerNewY}, player->radius,
+                (CheckCollisionCircleRec((Vector2){newPosition.x, newPosition.y}, player->radius,
                 (Rectangle){ mapPosition.x - 0.5f + x*1.0f, mapPosition.z - 0.5f + y*1.0f, 1.0f, 1.0f })))
             {
-                collision = WALL;
+                collision = COLLISION_WALL;
                 //what kind of collision
-                if(COLOR_EQUAL(pixelColor, CDARKRED)) collision = CONNECTION;
-                if(COLOR_EQUAL(pixelColor, CORANGE))  collision = BADTRAIN;
-                if(COLOR_EQUAL(pixelColor, BLACK))  collision = EXIT;
+                if(COLOR_EQUAL(pixelColor, CDARKRED)) collision = COLLISION_CONNECTION;
+                if(COLOR_EQUAL(pixelColor, CORANGE))  collision = COLLISION_BADTRAIN;
+                if(COLOR_EQUAL(pixelColor, BLACK))  collision = COLLISION_EXIT;
 #if defined(_DEBUG)
     
-                printf("Collision detected at : [%.2f:%.2f] (%d)%d, radius: %f\n",playerNewX, playerNewY, pixelIndex,collision, player->radius);
+                printf("Collision detected at : [%.2f:%.2f] (%d)%d, radius: %f\n",newPosition.x, newPosition.y, pixelIndex,collision, player->radius);
     
 #endif
             }
         }
     }
-
-    if(collision == NO_COLLISION)
-    {
-        player->worldPosition.x = playerNewX;
-        player->worldPosition.y = playerNewY;
-    }
-
     return collision;
 }
 
@@ -92,12 +82,48 @@ void UnloadGameplayScreen(void)
 
 void UpdateDrawGameplayScreen(void)
 {
+    if(state == STATE_GAMEOVER)
+    {
+        UpdateDrawGameOver();
+        return;
+    }
+    if(state == STATE_FINISHED_LEVEL)
+    {
+        if(currentLevel < MAX_LEVELS)
+        {
+            LoadLevel(++currentLevel, &player);
+            return;
+        }
+        else
+        {
+            isGameOver = GAMEOVER_WON;
+            state = STATE_WON;
+        }
+    }
+
     float deltaTime = GetFrameTime();
-    Vector3 playerOldPosition = player.worldPosition;
+    
+    levelTime -= deltaTime;
+
     UpdatePlayer(&player, deltaTime);
     CollisionType collision = CheckPlayerWallsCollision(&player, deltaTime);
+    HandleCollision(collision, &player, deltaTime);
 
-    //handle collision
+    if(player.healthPoints <= 0)
+    {
+        isGameOver = GAMEOVER_DEAD;
+        state = STATE_GAMEOVER;
+        return;
+    }
+
+    if(levelTime <= 0.0f && state == STATE_PLAYING)
+    {
+        isGameOver = GAMEOVER_TIMESUP;
+        state = STATE_GAMEOVER;
+        return;
+    }
+    
+
 
     UpdateCustomCamera(&player);
 
@@ -105,13 +131,14 @@ void UpdateDrawGameplayScreen(void)
     ClearBackground(CBLUE);
     if(state == STATE_PLAYING)
     {
-        levelTime -= deltaTime;
         BeginMode3D(camera);
             DrawModel(model, mapPosition, 1.0f, WHITE);
         EndMode3D();
         DrawPlayer(&player);
         DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
         DrawText(TextFormat("Speed: %.2f", player.speed),10, 40, 20, CYELLOW );
+        DrawRectangle(GetScreenWidth()/2 - 52, 4, player.maxHealthPoints + 4, 44, CPURPLE);
+        DrawRectangle(GetScreenWidth()/2 - 50, 6, player.healthPoints, 40, CORANGE);
     }
    
     
@@ -180,4 +207,70 @@ static void UpdateCustomCamera(Player *player)
     camera.target.x = camera.position.x + (cosf(player->rotationAngle) * 50);
     camera.target.z = camera.position.z + (sinf(player->rotationAngle) * 50);
     //DrawLine(playerScreenPosition.x, playerScreenPosition.y, playerScreenPosition.x + (cosf(playerRotationAngle) * playerMinimapSize), playerScreenPosition.y + (sinf(playerRotationAngle) * playerMinimapSize), palette[7]);
+}
+
+static void HandleCollision(CollisionType type, Player *player, float deltaTime)
+{
+    if(type == COLLISION_NO_COLLISION)
+    {
+        Vector2 newPosition = GetPlayerNextPosition(player, deltaTime);
+        player->worldPosition.x = newPosition.x;
+        player->worldPosition.y = newPosition.y;
+        return;
+    }
+    if(type == COLLISION_WALL || type == COLLISION_OBSTACLE)
+    {
+        if(player->graceTime <= 0)
+        {
+            float damage = player->speed * player->damageFactor;
+            player->healthPoints -= damage;
+            player->graceTime = player->maxGraceTime;
+            //TODO: handle hit
+            return;
+        }
+    }
+    if(type == COLLISION_EXIT)
+    {
+        isGameOver = GAMEOVER_LEFTSTATION;
+        state = STATE_GAMEOVER;
+        return;
+    }
+    if(type == COLLISION_BADTRAIN)
+    {
+        isGameOver = GAMEOVER_WRONGTRAIN;
+        state = STATE_GAMEOVER;
+        return;
+    }
+    if(type == COLLISION_CONNECTION)
+    {
+        state = STATE_FINISHED_LEVEL;
+        return;
+    }
+}
+
+void UpdateDrawGameOver(void)
+{
+    if(IsKeyPressed(KEY_SPACE))
+    {
+        isScreenFinished = true;
+    }
+    BeginDrawing();
+    ClearBackground(CPURPLE);
+    DrawText("GAME OVER",GetScreenWidth() / 2 - MeasureText("GAME OVER", 30) / 2, 50, 30, CORANGE);
+    if(isGameOver == GAMEOVER_DEAD)
+        DrawText("YOU DIED!",GetScreenWidth() / 2 - MeasureText("YOU DIED!", 30) / 2, 200, 30, CRED);
+    else if(isGameOver == GAMEOVER_LEFTSTATION)
+        DrawText("YOU LEFT THE STATION!",GetScreenWidth() / 2 - MeasureText("YOU LEFT THE STATION!", 30) / 2, 200, 30, CRED);
+    else if(isGameOver == GAMEOVER_WRONGTRAIN)
+        DrawText("YOU GOT ON THE WRONG TRAIN!",GetScreenWidth() / 2 - MeasureText("YOU GOT ON THE WRONG TRAIN!", 30) / 2, 200, 30, CRED);
+    else if(isGameOver == GAMEOVER_TIMESUP)
+        DrawText("YOU MISSED YOUR CONNECTION!",GetScreenWidth() / 2 - MeasureText("YOU GOT ON THE WRONG TRAIN!", 30) / 2, 200, 30, CRED);
+
+    DrawText("Press [SPACE] to continue", GetScreenWidth() / 2 - MeasureText("Press [SPACE] to continue", 24) / 2, GetScreenHeight() - 40, 24, CBLUE);
+    EndDrawing();
+}
+
+bool IsGameplayScreenFinished(void)
+{
+    return isScreenFinished;
 }
