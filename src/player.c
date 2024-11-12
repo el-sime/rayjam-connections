@@ -1,11 +1,12 @@
 #include <math.h>
 #include "raylib.h"
+#include "raymath.h"
 #include "player.h"
 
 void InitPlayer(Player *player)
 {
     player->worldPosition = (Vector3){0.0f, 0.0f, 0.0f};
-    player->radius = 1.0f;
+    player->radius = 0.1f;
     player->speed = 0.0f;
     player->minSpeed = 1.0f;
     player->maxSpeed = 5.0f;
@@ -26,10 +27,10 @@ void InitPlayer(Player *player)
     player->graceTime = 0.0f;
     player->maxHealthPoints = 100.0f;
     player->healthPoints = player->maxHealthPoints;
-    return player;
+    return;
 }
 
-void UpdateDrawPlayer(Player *player, float deltaTime)
+void UpdatePlayer(Player *player, float deltaTime)
 {
     if (player->graceTime > 0)
     {
@@ -82,6 +83,10 @@ void UpdateDrawPlayer(Player *player, float deltaTime)
         }
     }
 
+}
+
+void DrawPlayer(Player *player)
+{
     Rectangle sourceRec = {
         player->animationFrame * player->animationFrameWidth,
         0,

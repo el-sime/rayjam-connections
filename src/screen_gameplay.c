@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include "raylib.h"
 #include "constants.h"
 #include "screens.h"
@@ -6,12 +7,8 @@
 #include "cubemap.h"
 #include "player.h"
 
-
-
-
 void InitGameplayScreen(void)
 {
-
     camera.position = (Vector3){ 0.0f, 0.4f, 0.0f };
     camera.target = (Vector3){ 2.0f, 0.4f, 15.0f };
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
@@ -51,7 +48,8 @@ static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
     {
         for (int x = 0; (x < mapTexture.width  && collision == NO_COLLISION); x++)
         {
-            Color pixelColor = mapPixels[y*mapTexture.width + x];
+            int pixelIndex = y*mapTexture.width + x;
+            Color pixelColor = mapPixels[pixelIndex];
             if ( !COLOR_EQUAL(pixelColor, CPURPLE) &&       // Collision: white pixel, only check R channel
                 (CheckCollisionCircleRec((Vector2){playerNewX, playerNewY}, player->radius,
                 (Rectangle){ mapPosition.x - 0.5f + x*1.0f, mapPosition.z - 0.5f + y*1.0f, 1.0f, 1.0f })))
@@ -61,9 +59,21 @@ static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
                 if(COLOR_EQUAL(pixelColor, CDARKRED)) collision = CONNECTION;
                 if(COLOR_EQUAL(pixelColor, CORANGE))  collision = BADTRAIN;
                 if(COLOR_EQUAL(pixelColor, BLACK))  collision = EXIT;
+#if defined(_DEBUG)
+    
+                printf("Collision detected at : [%.2f:%.2f] (%d)%d, radius: %f\n",playerNewX, playerNewY, pixelIndex,collision, player->radius);
+    
+#endif
             }
         }
     }
+
+    if(collision == NO_COLLISION)
+    {
+        player->worldPosition.x = playerNewX;
+        player->worldPosition.y = playerNewY;
+    }
+
     return collision;
 }
 
@@ -83,6 +93,14 @@ void UnloadGameplayScreen(void)
 void UpdateDrawGameplayScreen(void)
 {
     float deltaTime = GetFrameTime();
+    Vector3 playerOldPosition = player.worldPosition;
+    UpdatePlayer(&player, deltaTime);
+    CollisionType collision = CheckPlayerWallsCollision(&player, deltaTime);
+
+    //handle collision
+
+    UpdateCustomCamera(&player);
+
     BeginDrawing();
     ClearBackground(CBLUE);
     if(state == STATE_PLAYING)
@@ -91,7 +109,7 @@ void UpdateDrawGameplayScreen(void)
         BeginMode3D(camera);
             DrawModel(model, mapPosition, 1.0f, WHITE);
         EndMode3D();
-        UpdateDrawPlayer(&player, deltaTime);
+        DrawPlayer(&player);
         DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
         DrawText(TextFormat("Speed: %.2f", player.speed),10, 40, 20, CYELLOW );
     }

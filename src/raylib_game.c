@@ -17,7 +17,6 @@
 #include "screens.h"
 #include "cubemap.h"
 
-#define MAX_LEVEL 2
 
 Color palette[MAX_PALETTE_COLORS] = {
     CBLUE    ,
