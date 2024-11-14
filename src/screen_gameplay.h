@@ -53,6 +53,8 @@ static Sound smallOuch;
 static Sound bigOuch;
 static Sound OuhMother;
 static Sound scratch;
+static bool hasScratchPlayed;
+
 
 static Music tunnelVision;
 

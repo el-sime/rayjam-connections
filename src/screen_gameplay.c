@@ -22,7 +22,7 @@ void InitGameplayScreen(void)
     tunnelVision = LoadMusicStream("resources/sounds/tunnel_vision.xm");
     //tunnelVision
     tunnelVision.looping = true;
-    SetMusicVolume(tunnelVision, 0.3);
+    SetMusicVolume(tunnelVision, 0.1);
     InitPlayer(&player);
 
     atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
@@ -35,6 +35,7 @@ void InitGameplayScreen(void)
     state = STATE_LEVEL_INTRO;
     
     isScreenFinished = false;
+    hasScratchPlayed = false;
 }
 
 static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
@@ -148,6 +149,7 @@ void UpdateDrawGameplayScreen(void)
     ClearBackground(CBLUE);
     if(state == STATE_PLAYING)
     {
+        UpdateMusicStream(tunnelVision);
         BeginMode3D(camera);
             DrawModel(model, mapPosition, 1.0f, WHITE);
         EndMode3D();
@@ -250,6 +252,19 @@ static void HandleCollision(CollisionType type, Player *player, float deltaTime)
             float damage = player->speed * player->damageFactor;
             player->healthPoints -= damage;
             player->graceTime = player->maxGraceTime;
+            float dmgTreshold = (player->maxSpeed * player->damageFactor) / 3;
+            if(damage < dmgTreshold)
+            {
+                PlaySound(smallOuch);
+            }
+            else if (damage >= dmgTreshold && damage < dmgTreshold * 2)
+            {
+                PlaySound(bigOuch);
+            }
+            else if(damage >= dmgTreshold * 2)
+            {
+                PlaySound(OuhMother);
+            }
             //TODO: handle hit
             return;
         }
@@ -275,6 +290,15 @@ static void HandleCollision(CollisionType type, Player *player, float deltaTime)
 
 static void UpdateDrawGameOver(void)
 {
+    if(IsMusicStreamPlaying(tunnelVision)) StopMusicStream(tunnelVision);
+    if(IsSoundPlaying(smallOuch)) StopSound(smallOuch);
+    if(IsSoundPlaying(bigOuch)) StopSound(bigOuch);
+    if(IsSoundPlaying(OuhMother)) StopSound(OuhMother);
+    if(!hasScratchPlayed)
+    {
+        PlaySound(scratch);
+        hasScratchPlayed = true;
+    }
     if(IsKeyPressed(KEY_SPACE))
     {
         isScreenFinished = true;
@@ -300,6 +324,7 @@ static void UpdateDrawLevelIntro(void)
     if(IsKeyPressed(KEY_SPACE))
     {
         state = STATE_PLAYING;
+        PlayMusicStream(tunnelVision);
     }
     BeginDrawing();
     ClearBackground(CORANGE);
@@ -312,6 +337,7 @@ static void UpdateDrawLevelIntro(void)
 
 static void UpdateDrawWin(void)
 {
+    if(IsMusicStreamPlaying(tunnelVision)) StopMusicStream(tunnelVision);
     
     if(IsKeyPressed(KEY_SPACE))
     {
