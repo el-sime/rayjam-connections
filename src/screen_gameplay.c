@@ -25,12 +25,16 @@ void InitGameplayScreen(void)
     SetMusicVolume(tunnelVision, 0.3);
     InitPlayer(&player);
 
-    state = STATE_PLAYING;
     atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
-    LoadLevel(1, &player);
+    currentLevel = 1;
+    LoadLevel(currentLevel, &player);
     mapPosition.x = 0.0f;
     mapPosition.y = 0.0f;
     mapPosition.z = 0.0f;
+
+    state = STATE_LEVEL_INTRO;
+    
+    isScreenFinished = false;
 }
 
 static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
@@ -82,22 +86,35 @@ void UnloadGameplayScreen(void)
 
 void UpdateDrawGameplayScreen(void)
 {
+    if(state == STATE_LEVEL_INTRO)
+    {
+        UpdateDrawLevelIntro();
+        return;
+    }
     if(state == STATE_GAMEOVER)
     {
         UpdateDrawGameOver();
+        return;
+    }
+    if(state == STATE_WON)
+    {
+        UpdateDrawWin();
         return;
     }
     if(state == STATE_FINISHED_LEVEL)
     {
         if(currentLevel < MAX_LEVELS)
         {
+            UnloadLevel();
             LoadLevel(++currentLevel, &player);
+            state = STATE_LEVEL_INTRO;
             return;
         }
         else
         {
             isGameOver = GAMEOVER_WON;
             state = STATE_WON;
+            return;
         }
     }
 
@@ -180,9 +197,11 @@ static void LoadLevel(int levelId, Player *player)
     player->worldPosition.x = x;
     player->worldPosition.y = y;
     player->worldPosition.z = z;
-    player->rotationAngle = angle;
+    player->rotationAngle = angle * (PI / 180);
 
-
+    player->speed = 1.0f;
+    player->healthPoints = player->maxHealthPoints;
+    player->graceTime = 0.0f;
 
     char mapFilename[24];
     sprintf(mapFilename, "resources/level%dmap.png", levelId);
@@ -198,6 +217,12 @@ static void LoadLevel(int levelId, Player *player)
     return;
 }
 
+static void UnloadLevel(void)
+{
+    UnloadTexture(mapTexture);
+    UnloadImageColors(mapPixels);
+    UnloadModel(model);
+}
 
 static void UpdateCustomCamera(Player *player)
 {
@@ -248,7 +273,7 @@ static void HandleCollision(CollisionType type, Player *player, float deltaTime)
     }
 }
 
-void UpdateDrawGameOver(void)
+static void UpdateDrawGameOver(void)
 {
     if(IsKeyPressed(KEY_SPACE))
     {
@@ -270,6 +295,35 @@ void UpdateDrawGameOver(void)
     EndDrawing();
 }
 
+static void UpdateDrawLevelIntro(void)
+{
+    if(IsKeyPressed(KEY_SPACE))
+    {
+        state = STATE_PLAYING;
+    }
+    BeginDrawing();
+    ClearBackground(CORANGE);
+    const char *levelLabel = TextFormat("Level %d", currentLevel);
+    DrawText(levelLabel, GetScreenWidth() / 2 - MeasureText(levelLabel, 30) / 2, 200, 30, CRED);
+    DrawText("Press [SPACE] to continue", GetScreenWidth() / 2 - MeasureText("Press [SPACE] to continue", 24) / 2, GetScreenHeight() - 40, 24, CBLUE);
+    EndDrawing();
+}
+
+
+static void UpdateDrawWin(void)
+{
+    
+    if(IsKeyPressed(KEY_SPACE))
+    {
+        isScreenFinished = true;
+    }
+    BeginDrawing();
+    ClearBackground(CORANGE);
+    
+    DrawText("YOU WON!", GetScreenWidth() / 2 - MeasureText("YOU WON!", 60) / 2, 200, 60, CRED);
+    DrawText("Press [SPACE] to continue", GetScreenWidth() / 2 - MeasureText("Press [SPACE] to continue", 24) / 2, GetScreenHeight() - 40, 24, CBLUE);
+    EndDrawing();
+}
 bool IsGameplayScreenFinished(void)
 {
     return isScreenFinished;

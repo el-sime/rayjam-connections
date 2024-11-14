@@ -28,7 +28,7 @@ typedef enum {
 
 typedef enum {
     STATE_NOT_READY = -1,
-    STATE_INTRO = 0,
+    STATE_LEVEL_INTRO = 0,
     STATE_PLAYING,
     STATE_PAUSED,
     STATE_GAMEOVER,
@@ -66,8 +66,13 @@ static float levelSpawnAngle;
 
 static void UpdateCustomCamera(Player *player);
 static void UpdateDrawGameOver(void);
-static void UpdateDrawPauseScreen(void);
+static void UpdateDrawPause(void);
+static void UpdateDrawLevelIntro(void);
+static void UpdateDrawWin(void);
+
 static void LoadLevel(int levelId, Player *player);
+static void UnloadLevel(void);
+
 static void HandleCollision(CollisionType type, Player *player, float deltaTime);
 static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime);
 

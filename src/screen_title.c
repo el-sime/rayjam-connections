@@ -22,7 +22,10 @@ void UpdateDrawTitleScreen(void)
     EndDrawing();
 
 }
-
+void InitTitleScreen(void)
+{
+    isScreenFinished = false;
+}
 bool IsTitleScreenFinished(void)
 {
     return isScreenFinished;
