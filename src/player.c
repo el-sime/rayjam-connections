@@ -25,6 +25,9 @@ void InitPlayer(Player *player)
 
     player->maxGraceTime = 1.5f;
     player->graceTime = 0.0f;
+    player->maxBlinkIntervals = 5;
+    player->blinkInterval = player->maxGraceTime / player->maxBlinkIntervals;
+
     player->maxHealthPoints = 100.0f;
     player->healthPoints = player->maxHealthPoints;
     player->damageFactor = 10.0f;
@@ -65,6 +68,9 @@ void UpdatePlayer(Player *player, float deltaTime)
 
 void DrawPlayer(Player *player)
 {
+    
+    int blinkFrame = ceilf((player->maxGraceTime - player->graceTime) / player->blinkInterval);
+    
     Rectangle sourceRec = {
         player->animationFrame * player->animationFrameWidth,
         0,
@@ -78,15 +84,20 @@ void DrawPlayer(Player *player)
         player->animationFrameWidth * 3,
         player->animationTexture.height * 3
     };
-
-    DrawTexturePro(
-        player->animationTexture,
-        sourceRec,
-        destinationRec,
-        (Vector2){0,0},
-        0.0f,
-        WHITE
-    );
+    if(
+        player->graceTime <= 0 ||
+        (player->graceTime > 0 && (blinkFrame % 2 == 0))
+    )
+    {
+        DrawTexturePro(
+            player->animationTexture,
+            sourceRec,
+            destinationRec,
+            (Vector2){0,0},
+            0.0f,
+            WHITE
+        );
+    }
 }
 
 void HandlePlayerInput(Player *player, float deltaTime)

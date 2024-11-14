@@ -20,6 +20,9 @@ typedef struct Player{
     float animationTime;
     float maxGraceTime;
     float graceTime;
+    int maxBlinkIntervals;
+    float blinkInterval;
+
     float healthPoints;
     float maxHealthPoints;
     float damageFactor;
