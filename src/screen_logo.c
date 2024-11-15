@@ -3,7 +3,7 @@
 #include "screens.h"
 
 static float logoScreenTime = 0.0;
-static const float MAX_LOGO_SCREEN_TIME = 10.0;
+static const float MAX_LOGO_SCREEN_TIME = 3.0;
 static bool isScreenFinished = false;
 void UpdateDrawLogoScreen(void)
 {
