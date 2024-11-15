@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "raylib.h"
+#include "raymath.h"
 #include "constants.h"
 #include "screens.h"
 #include "screen_gameplay.h"
@@ -24,6 +25,8 @@ void InitGameplayScreen(void)
     tunnelVision.looping = true;
     SetMusicVolume(tunnelVision, 0.1);
     InitPlayer(&player);
+
+    heartTexture = LoadTexture("resources/heart.png");
 
     atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
     currentLevel = 1;
@@ -75,6 +78,7 @@ static CollisionType CheckPlayerWallsCollision(Player *player, float deltaTime)
 void UnloadGameplayScreen(void)
 {
     UnloadTexture(mapTexture);    // Unload cubicmap texture
+    UnloadTexture(heartTexture);
     UnloadTexture(atlasTexture);
     UnloadTexture(levelMapTexture);
     UnloadModel(model);         // Unload map model
@@ -154,10 +158,7 @@ void UpdateDrawGameplayScreen(void)
             DrawModel(model, mapPosition, 1.0f, WHITE);
         EndMode3D();
         DrawPlayer(&player);
-        DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
-        DrawText(TextFormat("Speed: %.2f", player.speed),10, 40, 20, CYELLOW );
-        DrawRectangle(GetScreenWidth()/2 - 52, 4, player.maxHealthPoints + 4, 44, CPURPLE);
-        DrawRectangle(GetScreenWidth()/2 - 50, 6, player.healthPoints, 40, CORANGE);
+        DrawUI(&player);
     }
    
     
@@ -353,4 +354,47 @@ static void UpdateDrawWin(void)
 bool IsGameplayScreenFinished(void)
 {
     return isScreenFinished;
+}
+
+static void DrawUI(Player *player)
+{
+    DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
+        DrawText(TextFormat("Speed: %.2f", player->speed),10, 40, 20, CYELLOW );
+        //DrawRectangle(GetScreenWidth()/2 - 52, 4, player.maxHealthPoints + 4, 44, CPURPLE);
+        //DrawRectangle(GetScreenWidth()/2 - 50, 6, player.healthPoints, 40, CORANGE);
+    DrawHP(player);
+    return;
+}
+
+static void DrawHP(Player *player)
+{
+    int hearts = 3;
+    float heartHPValue = player->maxHealthPoints / hearts;
+    float scale = 0.5;
+    float heartWidth = (float)heartTexture.width / 2 * scale;
+    float hpWidth = heartWidth * hearts;
+    float positionX = UIHorizontalOffset;
+    float positionY = GetScreenHeight() - UIVerticalOffset - (float)heartTexture.height * scale;
+    Rectangle source = { 0.0f, 0.0f, (float)heartTexture.width / 2 , (float)heartTexture.height };
+    Rectangle sourceFull = {(float)heartTexture.width / 2, 0.0f, (float)heartTexture.width / 2 , (float)heartTexture.height };
+    Rectangle dest = { positionX, positionY, heartWidth, (float)heartTexture.height * scale};
+    Rectangle destFull = dest;
+    Vector2 origin = { 0.0f, 0.0f };
+
+    
+
+    for (int i=0; i<hearts; i++)
+    {
+        dest.x += i > 0? heartWidth : 0;
+        destFull.x = dest.x; 
+        DrawTexturePro(heartTexture, source, dest, origin, 0.0f, WHITE);
+        float hpRatio = player->healthPoints / player->maxHealthPoints;
+        float hpToHearts = (hpWidth * hpRatio);
+        
+        destFull.width = Clamp(hpToHearts - (i * heartWidth), 0.0f, heartWidth);
+        sourceFull.width = destFull.width * 2;
+
+        DrawTexturePro(heartTexture, sourceFull, destFull, origin, 0.0f, WHITE);
+    }
+    return;
 }

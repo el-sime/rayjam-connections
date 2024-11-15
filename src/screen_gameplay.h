@@ -7,6 +7,8 @@
 
 #define MAX_LEVELS 2
 
+#define _DEBUG
+
 typedef enum {
     GAMEOVER_NOT_OVER = -1,
     GAMEOVER_DEAD = 0,
@@ -44,6 +46,12 @@ static Texture2D mapTexture;
 
 static Texture2D atlasTexture;
 static Color *mapPixels; // for collisions
+#if defined(_DEBUG)
+static int logged = 0;
+#endif
+static int UIVerticalOffset = 16;
+static int UIHorizontalOffset = 16;
+static Texture2D heartTexture;
 
 static Camera camera = { 0 };
 static Player player;
@@ -71,7 +79,8 @@ static void UpdateDrawGameOver(void);
 static void UpdateDrawPause(void);
 static void UpdateDrawLevelIntro(void);
 static void UpdateDrawWin(void);
-
+static void DrawUI(Player *player);
+static void DrawHP(Player *player);
 static void LoadLevel(int levelId, Player *player);
 static void UnloadLevel(void);
 
