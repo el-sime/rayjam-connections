@@ -1,6 +1,6 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
-
+#include "raylib.h"
 /**********************************/
 //        8 COLORS PALETTE        //
 /**********************************/
@@ -14,6 +14,7 @@
 #define CORANGE   CLITERAL (Color){0xff, 0x85, 0x31, 0xff}
 #define CYELLOW   CLITERAL (Color){0xff, 0xa6, 0x00, 0xff}
 #define MAX_PALETTE_COLORS 8
-
+ 
+#define DEG_TO_RAD (degValue) (degValue * (PI / 180))
 
 #endif

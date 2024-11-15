@@ -74,3 +74,5 @@ android.*
 .vscode
 
 *.ase
+
+src/connections
