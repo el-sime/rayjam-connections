@@ -188,7 +188,7 @@ static void LoadLevel(int levelId, Player *player)
     line++;
     while(!feof(levelFile))
     {
-        if(line == 1) fscanf(levelFile, "%f", &levelTime);
+        if(line == 1) fscanf(levelFile, "%f", &levelMaxTime);
         if(line == 2) fscanf(levelFile, "%f", &x);
         if(line == 3) fscanf(levelFile, "%f", &y);
         if(line == 4) fscanf(levelFile, "%f", &z);
@@ -206,6 +206,7 @@ static void LoadLevel(int levelId, Player *player)
     player->healthPoints = player->maxHealthPoints;
     player->graceTime = 0.0f;
 
+    levelTime = levelMaxTime;
     char mapFilename[24];
     sprintf(mapFilename, "resources/level%dmap.png", levelId);
     Image image = LoadImage(mapFilename);
@@ -358,11 +359,12 @@ bool IsGameplayScreenFinished(void)
 
 static void DrawUI(Player *player)
 {
-    DrawText(TextFormat("TIME LEFT: %.2f", levelTime),10, 10, 40, CYELLOW );
-        DrawText(TextFormat("Speed: %.2f", player->speed),10, 40, 20, CYELLOW );
+    
         //DrawRectangle(GetScreenWidth()/2 - 52, 4, player.maxHealthPoints + 4, 44, CPURPLE);
         //DrawRectangle(GetScreenWidth()/2 - 50, 6, player.healthPoints, 40, CORANGE);
     DrawHP(player);
+    DrawTimer(levelMaxTime, levelTime);
+    DrawSpeed(player->maxSpeed, player->speed);
     return;
 }
 
@@ -396,5 +398,32 @@ static void DrawHP(Player *player)
 
         DrawTexturePro(heartTexture, sourceFull, destFull, origin, 0.0f, WHITE);
     }
+    return;
+}
+
+static void DrawTimer(float maxTime, float currentTime)
+{
+    float timeLeft = (currentTime / maxTime );
+    timerEndAngle = timeLeft * 360 + timerStartAngle;
+    Color timerColor = CYELLOW;
+    if(timeLeft >= 0.5 && timeLeft <0.75) timerColor = CORANGE;
+    if(timeLeft > 0.25 && timeLeft < 0.5) timerColor = CRED;
+    if(timeLeft < 0.25) timerColor = CBURGUNDY;
+    Vector2 center = {GetScreenWidth() / 2, timerRadius + UIVerticalOffset};
+    DrawCircle(center.x, center.y, timerRadius, CBLUE);
+    DrawCircleSector(center, timerRadius-2, timerStartAngle, timerEndAngle, (int)(timerEndAngle*10), timerColor);
+    return;
+}
+
+static void DrawSpeed(float maxSpeed, float currentSpeed)
+{
+    DrawRectangle(UIHorizontalOffset, GetScreenHeight() / 2 - speedometerHeight / 2, speedometerWidth, speedometerHeight, CBLUE);
+    float currentSpeedometerValue = (currentSpeed / maxSpeed) * speedometerHeight - 4;
+    DrawRectangle(
+        UIHorizontalOffset + 2, 
+        (GetScreenHeight() / 2 - speedometerHeight / 2) + (speedometerHeight - currentSpeedometerValue), 
+        speedometerWidth - 4, 
+        currentSpeedometerValue - 2,
+        CORANGE);
     return;
 }

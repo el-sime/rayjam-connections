@@ -70,9 +70,19 @@ static GameOverReason isGameOver = GAMEOVER_NOT_OVER;
 
 static int currentLevel = 0;
 static Texture2D levelMapTexture;
+static float levelMaxTime;
 static float levelTime = 0.0f;
+static float timerStartAngle = 270.0f;
+static float timerEndAngle = 360.0f;
+static float timerRadius = 32.0f;
+
+static float speedometerWidth = 32.0f;
+static float speedometerHeight = 128.0f;
+
 static Vector3 levelSpawnPoint;
 static float levelSpawnAngle;
+
+
 
 static void UpdateCustomCamera(Player *player);
 static void UpdateDrawGameOver(void);
@@ -81,6 +91,8 @@ static void UpdateDrawLevelIntro(void);
 static void UpdateDrawWin(void);
 static void DrawUI(Player *player);
 static void DrawHP(Player *player);
+static void DrawTimer(float maxTime, float currentTime);
+static void DrawSpeed(float maxSpeed, float currentSpeed);
 static void LoadLevel(int levelId, Player *player);
 static void UnloadLevel(void);
 
