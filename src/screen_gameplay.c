@@ -201,7 +201,7 @@ static void LoadLevel(int levelId, Player *player)
     player->worldPosition.y = y;
     player->worldPosition.z = z;
     player->rotationAngle = angle * (PI / 180);
-
+    player->turnDirection = 0;
     player->speed = 1.0f;
     player->healthPoints = player->maxHealthPoints;
     player->graceTime = 0.0f;
