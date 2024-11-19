@@ -304,6 +304,14 @@ static void UpdateDrawGameOver(void)
     if(IsKeyPressed(KEY_SPACE))
     {
         isScreenFinished = true;
+        return;
+    }
+    if(IsKeyPressed(KEY_R))
+    {
+        UnloadLevel();
+        LoadLevel(currentLevel, &player);
+        state = STATE_LEVEL_INTRO;
+        return;
     }
     BeginDrawing();
     ClearBackground(CPURPLE);
@@ -316,8 +324,7 @@ static void UpdateDrawGameOver(void)
         DrawText("YOU GOT ON THE WRONG TRAIN!",GetScreenWidth() / 2 - MeasureText("YOU GOT ON THE WRONG TRAIN!", 30) / 2, 200, 30, CRED);
     else if(isGameOver == GAMEOVER_TIMESUP)
         DrawText("YOU MISSED YOUR CONNECTION!",GetScreenWidth() / 2 - MeasureText("YOU GOT ON THE WRONG TRAIN!", 30) / 2, 200, 30, CRED);
-
-    DrawText("Press [SPACE] to continue", GetScreenWidth() / 2 - MeasureText("Press [SPACE] to continue", 24) / 2, GetScreenHeight() - 40, 24, CBLUE);
+    DrawText("Press [R] to restart the current level, [SPACE] exit to title", GetScreenWidth() / 2 - MeasureText("Press [R] to restart the current level, [SPACE] exit to title", 18) / 2, GetScreenHeight() - 40, 18, CBLUE);
     EndDrawing();
 }
 

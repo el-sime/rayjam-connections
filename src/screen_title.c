@@ -3,10 +3,12 @@
 #include "screens.h"
 
 static bool isScreenFinished = false;
-
+static float loadTime = 0.0f;
+static float maxLoadTime = 0.3f;
 void UpdateDrawTitleScreen(void)
 {
-    if(IsKeyPressed(KEY_SPACE))
+    loadTime += GetFrameTime();
+    if(loadTime >= maxLoadTime && IsKeyPressed(KEY_SPACE))
     {
         isScreenFinished = true;
     }
@@ -24,6 +26,7 @@ void UpdateDrawTitleScreen(void)
 }
 void InitTitleScreen(void)
 {
+    loadTime = 0.0f;
     isScreenFinished = false;
 }
 bool IsTitleScreenFinished(void)
