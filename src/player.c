@@ -3,6 +3,8 @@
 #include "raymath.h"
 #include "player.h"
 
+#include "actions.h"
+
 void InitPlayer(Player *player)
 {
     player->worldPosition = (Vector3){0.0f, 0.0f, 0.0f};
@@ -102,27 +104,27 @@ void DrawPlayer(Player *player)
 
 void HandlePlayerInput(Player *player, float deltaTime)
 {
-    if(IsKeyPressed(KEY_A))
+    if(IsActionTurnLeft())
     {
         player->turnDirection = -1;
     }
-    if(IsKeyPressed(KEY_D))
+    if(IsActionTurnRight())
     {
         player->turnDirection = 1;
     }
     if(
-        (player->turnDirection == -1 && IsKeyReleased(KEY_A)) ||
-        (player->turnDirection == 1 && IsKeyReleased(KEY_D))
+        (player->turnDirection == -1 && !IsActionTurnLeft()) ||
+        (player->turnDirection == 1 && !IsActionTurnRight())
     )
     {
         player->turnDirection = 0;
     }
 
-    if(IsKeyDown(KEY_W))
+    if(IsActionAccelerate())
     {
         player->speed = Clamp(player->speed + player->acceleration * deltaTime, player->minSpeed, player->maxSpeed);
     }
-    if(IsKeyDown(KEY_S))
+    if(IsActionDecelerate())
     {
         player->speed = Clamp(player->speed - player->acceleration * deltaTime, player->minSpeed, player->maxSpeed);
     }

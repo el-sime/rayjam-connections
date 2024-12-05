@@ -7,6 +7,7 @@
 #include "screen_gameplay.h"
 #include "cubemap.h"
 #include "player.h"
+#include "actions.h"
 
 void InitGameplayScreen(void)
 {
@@ -27,6 +28,12 @@ void InitGameplayScreen(void)
     InitPlayer(&player);
 
     heartTexture = LoadTexture("resources/heart.png");
+    arrowTexture = LoadTexture("resources/arrow.png");
+    arrowUpTexture = LoadTexture("resources/arrow-up.png");
+    SetControlRectangle(LEFT, (Rectangle){0.0f,GetScreenHeight() - arrowTexture.height,arrowTexture.width, arrowTexture.height});
+    SetControlRectangle(UP, (Rectangle){0.0f,GetScreenHeight() - arrowTexture.height*2,arrowTexture.width, arrowTexture.height});
+    SetControlRectangle(RIGHT, (Rectangle){GetScreenWidth() - arrowTexture.width,GetScreenHeight() - arrowTexture.height,arrowTexture.width, arrowTexture.height});
+    SetControlRectangle(DOWN, (Rectangle){GetScreenWidth() - arrowTexture.width,GetScreenHeight() - arrowTexture.height*2,arrowTexture.width, arrowTexture.height});
 
     atlasTexture = LoadTexture("resources/connections-atlas.png");    // Load map texture
     currentLevel = 1;
@@ -79,6 +86,7 @@ void UnloadGameplayScreen(void)
 {
     UnloadTexture(mapTexture);    // Unload cubicmap texture
     UnloadTexture(heartTexture);
+    UnloadTexture(arrowTexture);
     UnloadTexture(atlasTexture);
     UnloadTexture(levelMapTexture);
     UnloadModel(model);         // Unload map model
@@ -372,6 +380,7 @@ static void DrawUI(Player *player)
     DrawHP(player);
     DrawTimer(levelMaxTime, levelTime);
     DrawSpeed(player->maxSpeed, player->speed);
+    DrawControls();
     return;
 }
 
@@ -382,7 +391,7 @@ static void DrawHP(Player *player)
     float scale = 0.5;
     float heartWidth = (float)heartTexture.width / 2 * scale;
     float hpWidth = heartWidth * hearts;
-    float positionX = UIHorizontalOffset;
+    float positionX = GetScreenWidth() / 2 - hpWidth / 2;
     float positionY = GetScreenHeight() - UIVerticalOffset - (float)heartTexture.height * scale;
     Rectangle source = { 0.0f, 0.0f, (float)heartTexture.width / 2 , (float)heartTexture.height };
     Rectangle sourceFull = {(float)heartTexture.width / 2, 0.0f, (float)heartTexture.width / 2 , (float)heartTexture.height };
@@ -394,6 +403,7 @@ static void DrawHP(Player *player)
 
     for (int i=0; i<hearts; i++)
     {
+        
         dest.x += i > 0? heartWidth : 0;
         destFull.x = dest.x; 
         DrawTexturePro(heartTexture, source, dest, origin, 0.0f, WHITE);
@@ -433,4 +443,41 @@ static void DrawSpeed(float maxSpeed, float currentSpeed)
         currentSpeedometerValue - 2,
         CORANGE);
     return;
+}
+static void DrawControls(void)
+{
+    DrawTexturePro(
+        arrowTexture, 
+        (Rectangle){0,0,arrowTexture.width, arrowTexture.height},
+        GetControlRectangle(LEFT),
+        (Vector2){0.0f, 0.0f},
+        0.0f,
+        WHITE
+    );
+    DrawTexturePro(
+        arrowTexture, 
+        (Rectangle){0,0,-arrowTexture.width, arrowTexture.height},
+        GetControlRectangle(RIGHT),
+        (Vector2){0.0f, 0.0f},
+        0.0f,
+        WHITE
+    );
+    DrawTexturePro(
+        arrowUpTexture, 
+        (Rectangle){0,0,arrowTexture.width, arrowTexture.height},
+        GetControlRectangle(UP),
+        (Vector2){0.0f, 0.0f},
+        0.0f,
+        WHITE
+    );
+    DrawTexturePro(
+        arrowUpTexture, 
+        (Rectangle){0,0,arrowTexture.width, -arrowTexture.height},
+        GetControlRectangle(DOWN),
+        (Vector2){0.0f, 0.0f},
+        0.0f,
+        WHITE
+    );
+    //DrawTextureEx(arrowTexture, (Vector2){GetScreenWidth() - arrowTexture.width, GetScreenHeight() - arrowTexture.height}, PI, 1.0f, WHITE);
+    return;    
 }

@@ -52,6 +52,9 @@ static int logged = 0;
 static int UIVerticalOffset = 16;
 static int UIHorizontalOffset = 16;
 static Texture2D heartTexture;
+static Texture2D arrowTexture;
+static Texture2D arrowUpTexture;
+
 
 static Camera camera = { 0 };
 static Player player;
@@ -82,8 +85,6 @@ static float speedometerHeight = 128.0f;
 static Vector3 levelSpawnPoint;
 static float levelSpawnAngle;
 
-
-
 static void UpdateCustomCamera(Player *player);
 static void UpdateDrawGameOver(void);
 static void UpdateDrawPause(void);
@@ -93,6 +94,7 @@ static void DrawUI(Player *player);
 static void DrawHP(Player *player);
 static void DrawTimer(float maxTime, float currentTime);
 static void DrawSpeed(float maxSpeed, float currentSpeed);
+static void DrawControls(void);
 static void LoadLevel(int levelId, Player *player);
 static void UnloadLevel(void);
 
